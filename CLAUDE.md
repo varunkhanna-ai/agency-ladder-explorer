@@ -26,8 +26,8 @@ lowest rung that reliably completes the task is the correct design choice.
 - [x] Phase 4 — rungs 1-4
 - [x] Phase 5 — rung 5 (ReAct)
 - [x] Phase 6 — evals
-- [ ] Phase 7 — Streamlit UI
-- [ ] Phase 8 — README + deploy
+- [x] Phase 7 — Streamlit UI
+- [x] Phase 8 — README + deploy
 
 ## Handoff Protocol
 Before ending any session (whether switching tools, or finishing a parallel worktree round):
@@ -39,6 +39,8 @@ Before ending any session (whether switching tools, or finishing a parallel work
 
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
+
+- **2026-07-15 (Claude Code):** Phases 7+8 complete. Streamlit UI built with all rungs 4–5, comparison table, cost/latency chart, and callout logic. README complete with thesis, eval findings, ReAct trace, and portfolio framing. Live demo deployed to Streamlit Community Cloud at https://agency-ladder-explorer-y6rsmz4pwqbd2ojhuzk4qv.streamlit.app/
 
 - **2026-07-15 (Kilo Code):** Phase 6 complete — `evals/cases.py` (12 EvalCase definitions T01-T12 per §8) + `evals/test_trajectory.py` (trajectory-level pytest assertions on tool sequence + args, not final text). 9/12 pass live (Rung 4+5 cases), 3 skipped (T01-T03, rungs 1-3 not built), T12 marked xfail (non-deterministic wrong-first-guess recovery). step_budget_breach tested. Groq free-tier TPD (100K) recharged daily — run tests once per day. Run with `python3 -m pytest evals/ -v`.
 - Built `src/rungs/rung5_react.py` (hand-written THINK/ACT/OBSERVE loop, all 7
