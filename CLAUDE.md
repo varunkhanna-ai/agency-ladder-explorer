@@ -20,7 +20,7 @@ lowest rung that reliably completes the task is the correct design choice.
   so a future FastAPI+Vercel migration only swaps the UI layer.
 
 ## Build status
-- [ ] Phase 1 — scaffold + data
+- [x] Phase 1 — scaffold + data
 - [x] Phase 2 — llm.py, config, metrics, trace
 - [ ] Phase 3 — tools.py
 - [ ] Phase 4 — rungs 1-4
@@ -39,6 +39,7 @@ Before ending any session (whether switching tools, or finishing a parallel work
 
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
+- **2026-07-15 (Kilo Code):** Phase 1 complete. Created worktree `../ladder-kilo-p1`, scaffold dirs (`src/`, `evals/`, `data/`), and deterministic synthetic data for all 6 required scenarios. Verified JSON validity.
 
 ### 2026-07-15 — Claude Code (Track B) — Phase 2 complete
 - Built `src/config.py`, `src/llm.py`, `src/metrics.py`, `src/trace.py` per §2/§7.

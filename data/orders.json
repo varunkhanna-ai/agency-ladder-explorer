@@ -1,0 +1,98 @@
+[
+  {
+    "order_id": "ORD-9821",
+    "customer_name": "Priya Nair",
+    "restaurant_id": "R482",
+    "restaurant_name": "Sunrise Biryani",
+    "items": ["Chicken Biryani", "Raita"],
+    "order_total_usd": 18.50,
+    "placed_at": "2026-07-15T19:12:00",
+    "promised_at": "2026-07-15T19:52:00",
+    "status": "in_transit",
+    "delivery_area": "Koramangala"
+  },
+  {
+    "order_id": "ORD-4471",
+    "customer_name": "Rohan Mehta",
+    "restaurant_id": "R101",
+    "restaurant_name": "Trattoria Roma",
+    "items": ["Margherita Pizza", "Tiramisu"],
+    "order_total_usd": 24.00,
+    "placed_at": "2026-07-15T18:30:00",
+    "promised_at": "2026-07-15T19:10:00",
+    "status": "in_transit",
+    "delivery_area": "Indiranagar"
+  },
+  {
+    "order_id": "ORD-1200",
+    "customer_name": "Anjali Desai",
+    "restaurant_id": "R205",
+    "restaurant_name": "Burger Barn",
+    "items": ["Classic Cheeseburger", "Fries"],
+    "order_total_usd": 15.75,
+    "placed_at": "2026-07-15T17:00:00",
+    "promised_at": "2026-07-15T17:40:00",
+    "status": "delivered",
+    "delivery_area": "Jayanagar"
+  },
+  {
+    "order_id": "ORD-1201",
+    "customer_name": "Karan Patel",
+    "restaurant_id": "R310",
+    "restaurant_name": "Sushi Zen",
+    "items": ["Salmon Roll", "Miso Soup"],
+    "order_total_usd": 32.50,
+    "placed_at": "2026-07-14T20:00:00",
+    "promised_at": "2026-07-14T20:45:00",
+    "status": "delivered",
+    "delivery_area": "HSR Layout"
+  },
+  {
+    "order_id": "ORD-7788",
+    "customer_name": "Sneha Gupta",
+    "restaurant_id": "R482",
+    "restaurant_name": "Sunrise Biryani",
+    "items": ["Veg Biryani"],
+    "order_total_usd": 12.00,
+    "placed_at": "2026-07-15T19:30:00",
+    "promised_at": "2026-07-15T20:10:00",
+    "status": "in_transit",
+    "delivery_area": "BTM Layout"
+  },
+  {
+    "order_id": "ORD-3003",
+    "customer_name": "Vikram Singh",
+    "restaurant_id": "R101",
+    "restaurant_name": "Trattoria Roma",
+    "items": ["Penne Arrabbiata", "Garlic Bread"],
+    "order_total_usd": 19.25,
+    "placed_at": "2026-07-15T18:00:00",
+    "promised_at": "2026-07-15T18:40:00",
+    "status": "delivered",
+    "delivery_area": "Whitefield"
+  },
+  {
+    "order_id": "ORD-5500",
+    "customer_name": "Meera Iyer",
+    "restaurant_id": "R600",
+    "restaurant_name": "Taco Fiesta",
+    "items": ["Beef Tacos", "Guacamole"],
+    "order_total_usd": 21.00,
+    "placed_at": "2026-07-15T19:00:00",
+    "promised_at": "2026-07-15T19:40:00",
+    "status": "preparing",
+    "delivery_area": "Koramangala"
+  },
+  {
+    "order_id": "ORD-6100",
+    "customer_name": "Arjun Rao",
+    "restaurant_id": "R700",
+    "restaurant_name": "Noodle House",
+    "items": ["Pad Thai", "Spring Rolls"],
+    "order_total_usd": 16.50,
+    "placed_at": "2026-07-15T18:45:00",
+    "promised_at": "2026-07-15T19:25:00",
+    "status": "out_for_delivery",
+    "delivery_area": "Indiranagar"
+  }
+]
