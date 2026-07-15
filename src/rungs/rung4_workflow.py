@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .. import config, llm, metrics, tools, trace
-from .base import RungResult
+from .base import RungResult, tool_definitions
 
 RUNG_LEVEL = 4
 RUNG_NAME = "Fixed Workflow"
@@ -81,25 +81,9 @@ def _extract_order_id(query: str) -> tuple[str | None, dict[str, Any], llm.LLMRe
         {"role": "user", "content": query},
     ]
 
-    tool_defs = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_order_status",
-                "description": "Get the status and details of a food delivery order.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "order_id": {
-                            "type": "string",
-                            "description": "The order ID, e.g. ORD-9821.",
-                        }
-                    },
-                    "required": ["order_id"],
-                },
-            },
-        }
-    ]
+    # Use the shared tool definition from base.py (the canonical schema
+    # maintained alongside tools.py — see §4).
+    tool_defs = tool_definitions(["get_order_status"])
 
     resp = llm.complete(messages, tools=tool_defs)
 
