@@ -21,7 +21,7 @@ lowest rung that reliably completes the task is the correct design choice.
 
 ## Build status
 - [ ] Phase 1 — scaffold + data
-- [ ] Phase 2 — llm.py, config, metrics, trace
+- [x] Phase 2 — llm.py, config, metrics, trace
 - [ ] Phase 3 — tools.py
 - [ ] Phase 4 — rungs 1-4
 - [ ] Phase 5 — rung 5 (ReAct)
@@ -39,6 +39,34 @@ Before ending any session (whether switching tools, or finishing a parallel work
 
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
+
+### 2026-07-15 — Claude Code (Track B) — Phase 2 complete
+- Built `src/config.py`, `src/llm.py`, `src/metrics.py`, `src/trace.py` per §2/§7.
+  No other files touched (no `src/__init__.py`, no `requirements.txt` — those are
+  Track A's Phase 1). `src` imports fine as a namespace package meanwhile.
+- Groq pricing verified against https://groq.com/pricing (2026-07-15):
+  **$0.59 / 1M input, $0.79 / 1M output** for `llama-3.3-70b-versatile`. In config.py.
+- DoD met: live `llm.complete()` call against real Groq API returned reply + token
+  counts (53 in / 33 out, 974 ms). Also validated via mock (tool-call JSON→dict
+  normalization, temperature=0, cost math, trace shapes).
+- **ACTION FOR TRACK A (Phase 1):** `requirements.txt` MUST include `openai` and
+  `python-dotenv` (Phase 2 runtime deps — I pip-installed them into `.venv` but did
+  not create requirements.txt). `.gitignore` MUST exclude `.venv/` and `.env`
+  (both exist locally, untracked; I only staged my 4 src files + CLAUDE.md).
+- **CONTRACT NOTES for Phase 4/5 (rungs, other track):**
+  - `complete(messages, tools=None) -> LLMResponse`. `messages` are plain
+    OpenAI-format dicts (Groq speaks that wire format natively).
+  - `LLMResponse` fields: `content: str|None`, `tool_calls: list[ToolCall]`,
+    `input_tokens`, `output_tokens`, `assistant_message: dict` (append to history),
+    `raw`. `ToolCall` = `{id, name, arguments: dict}` — args already JSON-parsed.
+  - To continue a tool-calling turn: append `resp.assistant_message`, then one
+    `llm.tool_result_message(call.id, result_str)` per tool call, then call again.
+  - `TraceStep(kind, content, tool, args, risk, observation)` in trace.py with
+    `think()/act()/observe()/answer()` constructors. Kinds: THINK/ACT/OBSERVE/ANSWER
+    only (no 5th kind); the 🟡 WRITE marker rides on `risk="YELLOW"`.
+  - `metrics.RungMetrics()` is a context manager (times latency) with
+    `.add_usage(resp)` and `.input_tokens/.output_tokens/.cost_usd/.cost_per(n)`.
+  - `RungResult` is NOT defined here — it belongs to `rungs/base.py` (Phase 4).
 
 ## Conventions
 - No `print()` inside `src/` — return structured data.
