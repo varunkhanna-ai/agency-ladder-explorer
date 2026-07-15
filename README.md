@@ -1,6 +1,6 @@
 # 🪜 Agency Ladder Explorer
 
-**[Live Demo](LIVE_URL_GOES_HERE)** | [GitHub](https://github.com/varunkhanna-ai/agency-ladder-explorer)
+**[Live Demo](https://agency-ladder-explorer-y6rsmz4pwqbd2ojhuzk4qv.streamlit.app/)** | [GitHub](https://github.com/varunkhanna-ai/agency-ladder-explorer)
 
 **One customer-support query, two ways to build the agent that answers it — measured, not argued.**
 
@@ -9,8 +9,10 @@ comparison, and drop a screenshot of the "4. Comparison" table + bar charts
 here as docs/comparison.png, then replace this comment with:
 ![Comparison table](docs/comparison.png) -->
 
-> **Live demo status:** the `LIVE_URL_GOES_HERE` placeholder above is filled in
-> once the app is deployed to Streamlit Community Cloud (see [Deployment](#deployment) below).
+> **Live demo:** running on Streamlit Community Cloud —
+> [agency-ladder-explorer…streamlit.app](https://agency-ladder-explorer-y6rsmz4pwqbd2ojhuzk4qv.streamlit.app/).
+> Note: the demo calls Groq's free tier, which has a tight daily token quota; if
+> a rung shows a rate-limit message, that's the quota, not a bug (see [Deployment](#deployment)).
 
 ---
 
