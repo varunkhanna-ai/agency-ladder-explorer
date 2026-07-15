@@ -22,7 +22,7 @@ lowest rung that reliably completes the task is the correct design choice.
 ## Build status
 - [x] Phase 1 — scaffold + data
 - [ ] Phase 2 — llm.py, config, metrics, trace
-- [ ] Phase 3 — tools.py
+- [x] Phase 3 — tools.py
 - [ ] Phase 4 — rungs 1-4
 - [ ] Phase 5 — rung 5 (ReAct)
 - [ ] Phase 6 — evals
@@ -39,9 +39,9 @@ Before ending any session (whether switching tools, or finishing a parallel work
 
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
-- **2026-07-15 (Kilo Code):** Phase 1 complete. Created worktree `../ladder-kilo-p1`, scaffold dirs (`src/`, `evals/`, `data/`), and deterministic synthetic data for all 6 required scenarios. Verified JSON validity.
+- **2026-07-15 (Kilo Code):** Phase 3 complete — `src/tools.py` with all 7 tools + TOOL_REGISTRY risk metadata + audit log. $20 cap hard-enforced in `issue_refund_coupon`. TF-IDF via scikit-learn. All signatures match §4 spec. Tested: coupon cap, delay-vs-quality retrieval asymmetry, unknown-ID errors.
 
-## Conventions
+- **2026-07-15 (Kilo Code):** Phase 1 complete. Created worktree `../ladder-kilo-p1`, scaffold dirs (`src/`, `evals/`, `data/`), and deterministic synthetic data for all 6 required scenarios. Verified JSON validity.
 
 ## Conventions
 - No `print()` inside `src/` — return structured data.
