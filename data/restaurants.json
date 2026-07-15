@@ -1,0 +1,51 @@
+[
+  {
+    "restaurant_id": "R482",
+    "name": "Sunrise Biryani",
+    "status": "delayed",
+    "current_prep_time_min": 40,
+    "normal_prep_time_min": 15
+  },
+  {
+    "restaurant_id": "R101",
+    "name": "Trattoria Roma",
+    "status": "normal",
+    "current_prep_time_min": 12,
+    "normal_prep_time_min": 15
+  },
+  {
+    "restaurant_id": "R205",
+    "name": "Burger Barn",
+    "status": "normal",
+    "current_prep_time_min": 10,
+    "normal_prep_time_min": 10
+  },
+  {
+    "restaurant_id": "R310",
+    "name": "Sushi Zen",
+    "status": "normal",
+    "current_prep_time_min": 20,
+    "normal_prep_time_min": 20
+  },
+  {
+    "restaurant_id": "R600",
+    "name": "Taco Fiesta",
+    "status": "busy",
+    "current_prep_time_min": 25,
+    "normal_prep_time_min": 15
+  },
+  {
+    "restaurant_id": "R700",
+    "name": "Noodle House",
+    "status": "normal",
+    "current_prep_time_min": 15,
+    "normal_prep_time_min": 15
+  },
+  {
+    "restaurant_id": "R800",
+    "name": "Green Bowl",
+    "status": "closed",
+    "current_prep_time_min": 0,
+    "normal_prep_time_min": 10
+  }
+]
