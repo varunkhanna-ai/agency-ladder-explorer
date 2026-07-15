@@ -1,0 +1,17 @@
+# Agency Ladder Explorer dependencies
+# Python 3.11+
+
+# LLM provider (Groq uses OpenAI-compatible SDK)
+openai>=1.40.0
+
+# Config
+python-dotenv>=1.0.0
+
+# UI
+streamlit>=1.37.0
+
+# Retrieval (Rung 2 — keep dependency-light)
+scikit-learn>=1.5.0
+
+# Tests
+pytest>=8.0.0
