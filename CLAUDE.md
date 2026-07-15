@@ -23,7 +23,7 @@ lowest rung that reliably completes the task is the correct design choice.
 - [x] Phase 1 — scaffold + data
 - [x] Phase 2 — llm.py, config, metrics, trace
 - [x] Phase 3 — tools.py
-- [ ] Phase 4 — rungs 1-4
+- [x] Phase 4 — rungs 1-4
 - [ ] Phase 5 — rung 5 (ReAct)
 - [ ] Phase 6 — evals
 - [ ] Phase 7 — Streamlit UI
@@ -40,7 +40,7 @@ Before ending any session (whether switching tools, or finishing a parallel work
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
 
-- **2026-07-15 (Kilo Code):** Phase 3 complete — `src/tools.py` with all 7 tools + TOOL_REGISTRY risk metadata + audit log. $20 cap hard-enforced in `issue_refund_coupon`. TF-IDF via scikit-learn. All signatures match §4 spec. Tested: coupon cap, delay-vs-quality retrieval asymmetry, unknown-ID errors.
+- **2026-07-15 (Kilo Code, Track A):** Phase 4 complete — `src/rungs/base.py` (RungResult dataclass) + `src/rungs/rung4_workflow.py` (5-step fixed refund workflow per §6). LLM used for extraction (step 1: order ID via tool calling) and language (steps 4-5), NEVER for routing (step 3 is deterministic Python). Tested: cold food outside window → decline with no coupon; unknown order → error message. Fixed `RungMetrics` timing (moved from context-manager-with-return to explicit start/stop).
 
 ### 2026-07-15 — Claude Code (Track B) — Phase 2 complete
 - Built `src/config.py`, `src/llm.py`, `src/metrics.py`, `src/trace.py` per §2/§7.
