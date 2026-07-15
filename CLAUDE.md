@@ -24,7 +24,7 @@ lowest rung that reliably completes the task is the correct design choice.
 - [x] Phase 2 — llm.py, config, metrics, trace
 - [x] Phase 3 — tools.py
 - [ ] Phase 4 — rungs 1-4
-- [ ] Phase 5 — rung 5 (ReAct)
+- [x] Phase 5 — rung 5 (ReAct)
 - [ ] Phase 6 — evals
 - [ ] Phase 7 — Streamlit UI
 - [ ] Phase 8 — README + deploy
@@ -39,6 +39,35 @@ Before ending any session (whether switching tools, or finishing a parallel work
 
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
+
+### 2026-07-15 — Claude Code (Track B) — Phase 5 complete (ReAct loop)
+- Built `src/rungs/rung5_react.py` (hand-written THINK/ACT/OBSERVE loop, all 7
+  tools, full instruction block, step budget = `config.STEP_BUDGET` = 5, forced
+  `escalate_to_human` on budget exhaustion). `run(query, max_steps=None)` —
+  `max_steps` override exists so evals can lower the budget.
+- **Also created two SHARED files this round (flagged for merge safety):**
+  - `src/rungs/base.py` — the `RungResult` dataclass (EXACT §6 contract) + a
+    `Rung` ABC + `tool_definitions(names)` (OpenAI tool schemas, shared by
+    Rungs 3/4/5). §11 nominally lists base.py under Phase 4 (Kilo). **Kilo must
+    PULL this base.py, not recreate it, or Phase 4↔5 will merge-conflict on it.**
+  - `src/instructions.py` — the §5 five-slot manual + `compose()` /
+    `full_system_prompt()`. Needed by all rungs; Rung 5 uses the full block.
+    Same coordination note: Phase 4 should consume this, not re-author it.
+- DoD met via LIVE Groq calls: T06 (ORD-9821, rainy, restaurant silent) produced
+  a genuine multi-step trace calling BOTH `get_weather` and `get_restaurant_status`
+  (+ order status, driver GPS, policy); budget lowered to 2 correctly breached and
+  force-escalated. Also mock-tested: terminal escalate, YELLOW `🟡 WRITE ACTION
+  LOGGED` step, coupon cap held in code ($50→cap_exceeded).
+- **WATCH (for Phase 6 evals):** the multi-factor T06 tends to exhaust even the
+  full 5-step budget (spends all steps investigating, then force-escalates rather
+  than issuing a coupon). This is realistic but means T06's "coupon ≤ $20" is
+  vacuously true (no coupon). Eval authors: assert on the tool sequence (weather +
+  restaurant before any coupon) and treat budget-breach as an acceptable outcome,
+  or raise the budget for that case. temperature=0 so it's reproducible.
+- **STILL MISSING FROM REPO (Phase 1, Kilo):** `requirements.txt` and `.gitignore`
+  are untracked on `main` — not committed. I installed deps into `.venv` manually
+  (openai, python-dotenv, numpy, scikit-learn). `.gitignore` absence means `.venv`/
+  `.env` are NOT ignored; I staged only my source files explicitly (never `git add -A`).
 
 - **2026-07-15 (Kilo Code):** Phase 3 complete — `src/tools.py` with all 7 tools + TOOL_REGISTRY risk metadata + audit log. $20 cap hard-enforced in `issue_refund_coupon`. TF-IDF via scikit-learn. All signatures match §4 spec. Tested: coupon cap, delay-vs-quality retrieval asymmetry, unknown-ID errors.
 
