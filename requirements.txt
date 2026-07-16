@@ -9,6 +9,8 @@ python-dotenv>=1.0.0
 
 # UI
 streamlit>=1.37.0
+plotly>=5.20.0        # grouped bar charts on the executive dashboard
+pandas>=2.0.0         # tables + chart data shaping (also a streamlit dep)
 
 # Retrieval (Rung 2 — keep dependency-light)
 scikit-learn>=1.5.0

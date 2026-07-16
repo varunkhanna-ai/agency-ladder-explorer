@@ -1,331 +1,268 @@
-"""Streamlit UI — the Agency Ladder Explorer.
+"""Executive Dashboard — the landing page.
 
-The ONLY file in this repo allowed to import streamlit (see CLAUDE.md /
-IMPLEMENTATION_PLAN.md §9). Everything under `src/` returns plain data so a
-future FastAPI + Next.js/Vercel frontend only has to replace this file.
+A static, at-a-glance summary of the Rung 4 vs Rung 5 tradeoff for a
+decision-maker. It reads ONLY `data/benchmark_results.json` (generated once by
+`scripts/generate_benchmarks.py`) and makes NO live LLM calls — so it loads
+instantly and shows stable numbers. Every multiple ("N× slower / more
+expensive") is computed from the aggregates at render time, never hardcoded.
 
-Scope note: this demo compares Rung 4 (Fixed Workflow — developer controls the
-path) against Rung 5 (ReAct Loop — model controls the path). Rungs 1-3 were
-deliberately scoped out to focus engineering effort on the core comparison
-that carries the thesis; see the README for the full rationale.
+For live, real-time runs, the Interactive Explorer page makes the actual calls.
+
+Layout (exactly five sections):
+  1. Title + one-sentence thesis
+  2. Metric strip (cost/latency multiples + win/fail counts)
+  3. Two grouped bar charts (cost by rung, latency by rung)
+  4. Verdict table (one row per query + recommendation)
+  5. CTA row (explorer + contact links)
 """
 
 from __future__ import annotations
 
-import sys
+import json
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
-from dotenv import load_dotenv
 
-sys.path.insert(0, str(Path(__file__).parent))
-load_dotenv()
-
-from src import config, metrics  # noqa: E402
-from src.llm import LLMError, MissingAPIKeyError  # noqa: E402
-from src.rungs import rung4_workflow, rung5_react  # noqa: E402
-from src.rungs.base import RungResult  # noqa: E402
-
-# ---------------------------------------------------------------------------
-# Static config: which rungs exist, and the preset scenario queries.
-# ---------------------------------------------------------------------------
-
-RUNGS: dict[int, dict] = {
-    4: {
-        "name": "Fixed Workflow",
-        "run": rung4_workflow.run,
-        "controls_path": "Developer",
-        "blurb": "Hardcoded 5-step refund sequence. The model extracts and phrases; it never routes.",
-    },
-    5: {
-        "name": "ReAct Loop",
-        "run": rung5_react.run,
-        "controls_path": "Model",
-        "blurb": "Hand-written THINK/ACT/OBSERVE loop, all 7 tools, step budget 5.",
-    },
-}
-
-# The 6 planted scenarios from IMPLEMENTATION_PLAN.md §3, as natural-language
-# customer messages, so a recruiter can click instead of typing.
-PRESET_QUERIES: dict[str, str] = {
-    "ORD-9821 — late + rain + restaurant silent (the centerpiece)": (
-        "ORD-9821 is late, it's pouring rain, restaurant not answering"
-    ),
-    "ORD-4471 — looks fine but restaurant is backed up": (
-        "ORD-4471 hasn't moved in 40 min, I'm worried. Pizza should be here by now."
-    ),
-    "ORD-1200 — cold food, within refund window": (
-        "My order ORD-1200 from Burger Barn arrived cold. The cheese was "
-        "congealed. I want a refund."
-    ),
-    "ORD-1201 — cold food, outside refund window": (
-        "I ordered from Sushi Zen (ORD-1201) yesterday and the salmon roll "
-        "was warm. I need a refund."
-    ),
-    "ORD-7788 — simple, on-time, no complications": (
-        "Where is my order ORD-7788?"
-    ),
-    "ORD-3003 — allergic reaction (must escalate)": (
-        "I had an allergic reaction to my order ORD-3003. What should I do?"
-    ),
-}
-
-RISK_BADGE = {"GREEN": "🟢", "YELLOW": "🟡", "BLUE": "🔵"}
+ROOT = Path(__file__).resolve().parent
+BENCHMARK_PATH = ROOT / "data" / "benchmark_results.json"
 
 GITHUB_URL = "https://github.com/varunkhanna-ai/agency-ladder-explorer"
+LINKEDIN_URL = "https://www.linkedin.com/in/khannavarun/"
+EMAIL = "mailvarunkhanna@gmail.com"
 
-st.set_page_config(page_title="Agency Ladder Explorer", layout="wide")
+RUNG_LABELS = {"4": "Rung 4 — Fixed Workflow", "5": "Rung 5 — ReAct Loop"}
+TIER_LABELS = {"simple": "Simple", "medium": "Medium", "complex": "Complex"}
+
+# Dark plotly template that blends into Streamlit's dark theme.
+_PLOTLY_LAYOUT = dict(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    margin=dict(l=10, r=10, t=40, b=10),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+)
+_RUNG_COLORS = {"Rung 4 — Fixed Workflow": "#4c8bf5", "Rung 5 — ReAct Loop": "#f5a34c"}
+
+st.set_page_config(page_title="Executive Dashboard", page_icon="📊", layout="wide")
+
 
 # ---------------------------------------------------------------------------
-# 1. Header
+# Data loading + completeness guard
 # ---------------------------------------------------------------------------
 
-st.title("🪜 Agency Ladder Explorer")
+
+def load_benchmarks() -> dict | None:
+    if not BENCHMARK_PATH.exists():
+        return None
+    try:
+        return json.loads(BENCHMARK_PATH.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def is_complete(data: dict) -> bool:
+    """True only if every run succeeded and every aggregate mean is present."""
+    runs = data.get("runs", [])
+    if not runs or any(r.get("error") for r in runs):
+        return False
+    agg = data.get("aggregates", {})
+    overall = agg.get("overall", {})
+    for lvl in ("4", "5"):
+        cell = overall.get(lvl, {})
+        if not cell.get("cost_usd") or not cell.get("latency_ms"):
+            return False
+    return True
+
+
+def _fmt_when(iso: str) -> str:
+    try:
+        return datetime.fromisoformat(iso).strftime("%B %d, %Y at %H:%M UTC")
+    except (ValueError, TypeError):
+        return iso or "unknown"
+
+
+def _cta_row() -> None:
+    """Section 5 — shown on every render, even when data is pending."""
+    st.subheader("Try it yourself")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.page_link(
+            "pages/2_🔬_Interactive_Explorer.py",
+            label="Run it live →",
+            icon="🔬",
+        )
+    with c2:
+        st.markdown(f"[🔗 LinkedIn]({LINKEDIN_URL})")
+    with c3:
+        st.markdown(f"[📧 Email](mailto:{EMAIL})")
+    with c4:
+        st.markdown(f"[💻 GitHub]({GITHUB_URL})")
+
+
+# ===========================================================================
+# 1. Title + one-sentence thesis
+# ===========================================================================
+
+st.title("📊 Agency Ladder — Executive Dashboard")
+st.markdown(
+    "**Higher on the agency ladder is not better: the lowest rung that "
+    "reliably completes the task is the correct design choice.**"
+)
+
+data = load_benchmarks()
+
+# Graceful state while the static benchmark is being (re)generated.
+if data is None or not is_complete(data):
+    st.warning(
+        "📉 **Benchmark data is being regenerated.** These numbers come from a "
+        "one-time offline run of `scripts/generate_benchmarks.py`; the last run "
+        "hit Groq's daily free-tier token limit before completing, so the full "
+        "table is pending the next run. The Interactive Explorer still works "
+        "for live queries.",
+        icon="⏳",
+    )
+    st.divider()
+    _cta_row()
+    st.stop()
+
 st.caption(
-    "Higher on the agency ladder is not better — the lowest rung that "
-    "reliably completes the task is the correct design choice. "
-    f"[View source]({GITHUB_URL})"
+    f"Static benchmark — {len(data['runs'])} runs "
+    f"({data['aggregates']['by_tier']['simple']['n_queries']} queries per tier "
+    f"× {len(RUNG_LABELS)} rungs). Generated {_fmt_when(data['generated_at'])}. "
+    "No live model calls on this page."
 )
 
-st.markdown("---")
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown("[📧 Email](mailto:mailvarunkhanna@gmail.com)")
-with col2:
-    st.markdown("[🔗 LinkedIn](https://www.linkedin.com/in/khannavarun/)")
-with col3:
-    st.markdown(f"[💻 GitHub]({GITHUB_URL})")
-st.markdown("---")
+overall = data["aggregates"]["overall"]
+by_tier = data["aggregates"]["by_tier"]
 
-# ---------------------------------------------------------------------------
-# 2. Query input — text box + dropdown of preset scenario queries
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 2. Metric strip — all multiples computed from the JSON at render time
+# ===========================================================================
 
-st.subheader("1. Pick or write a query")
-col_a, col_b = st.columns([1, 2])
-with col_a:
-    preset_label = st.selectbox(
-        "Preset DeliverEase scenarios", list(PRESET_QUERIES.keys())
+cost4 = overall["4"]["cost_usd"]["mean"]
+cost5 = overall["5"]["cost_usd"]["mean"]
+lat4 = overall["4"]["latency_ms"]["mean"]
+lat5 = overall["5"]["latency_ms"]["mean"]
+
+cost_mult = cost5 / cost4 if cost4 else float("nan")
+lat_mult = lat5 / lat4 if lat4 else float("nan")
+
+simple_wins = by_tier["simple"]["r5_wins_over_r4"]
+simple_n = by_tier["simple"]["n_queries"]
+complex_fails = by_tier["complex"]["r4_fail_count"]
+complex_n = by_tier["complex"]["n_queries"]
+
+m1, m2, m3, m4 = st.columns(4)
+m1.metric(
+    "Rung 5 cost / query",
+    f"${cost5:.6f}",
+    delta=f"{cost_mult:.1f}× vs Rung 4",
+    delta_color="inverse",  # more expensive = red
+)
+m2.metric(
+    "Rung 5 latency / query",
+    f"{lat5:,.0f} ms",
+    delta=f"{lat_mult:.1f}× vs Rung 4",
+    delta_color="inverse",  # slower = red
+)
+m3.metric(
+    "Simple queries where Rung 5 wins",
+    f"{simple_wins} of {simple_n}",
+)
+m4.metric(
+    "Complex queries where Rung 4 fails",
+    f"{complex_fails} of {complex_n}",
+)
+
+st.divider()
+
+# ===========================================================================
+# 3. Two grouped bar charts side by side — cost by rung, latency by rung
+# ===========================================================================
+
+# Shape the per-tier means into a long dataframe: (Complexity, Rung, cost, latency).
+chart_rows = []
+for tier in data["tiers"]:
+    for lvl in ("4", "5"):
+        cell = by_tier[tier][lvl]
+        chart_rows.append(
+            {
+                "Complexity": TIER_LABELS.get(tier, tier),
+                "Rung": RUNG_LABELS[lvl],
+                "Cost per query (USD)": cell["cost_usd"]["mean"] if cell["cost_usd"] else 0,
+                "Latency per query (ms)": cell["latency_ms"]["mean"] if cell["latency_ms"] else 0,
+            }
+        )
+chart_df = pd.DataFrame(chart_rows)
+tier_order = [TIER_LABELS.get(t, t) for t in data["tiers"]]
+
+left, right = st.columns(2)
+with left:
+    st.markdown("**Cost per query by rung**")
+    fig_cost = px.bar(
+        chart_df,
+        x="Complexity",
+        y="Cost per query (USD)",
+        color="Rung",
+        barmode="group",
+        category_orders={"Complexity": tier_order},
+        color_discrete_map=_RUNG_COLORS,
     )
-with col_b:
-    query = st.text_area(
-        "Query sent to every selected rung",
-        value=PRESET_QUERIES[preset_label],
-        height=90,
+    fig_cost.update_layout(**_PLOTLY_LAYOUT)
+    st.plotly_chart(fig_cost, use_container_width=True)
+with right:
+    st.markdown("**Latency per query by rung**")
+    fig_lat = px.bar(
+        chart_df,
+        x="Complexity",
+        y="Latency per query (ms)",
+        color="Rung",
+        barmode="group",
+        category_orders={"Complexity": tier_order},
+        color_discrete_map=_RUNG_COLORS,
     )
+    fig_lat.update_layout(**_PLOTLY_LAYOUT)
+    st.plotly_chart(fig_lat, use_container_width=True)
 
-# ---------------------------------------------------------------------------
-# 3. Rung selector
-# ---------------------------------------------------------------------------
+st.divider()
 
-st.subheader("2. Choose rungs to compare")
+# ===========================================================================
+# 4. Verdict table — one row per query + plain-language recommendation
+# ===========================================================================
+
+st.subheader("Per-query verdict")
+verdict_rows = []
+for v in data["verdicts"]:
+    verdict_rows.append(
+        {
+            "Query": v["query"],
+            "Tier": TIER_LABELS.get(v["tier"], v["tier"]),
+            "Rung 4": "✅" if v["rung4_correct"] else "❌",
+            "Rung 5": "✅" if v["rung5_correct"] else "❌",
+            "Recommendation": v["recommendation"],
+        }
+    )
+st.dataframe(
+    pd.DataFrame(verdict_rows),
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Query": st.column_config.TextColumn(width="medium"),
+        "Recommendation": st.column_config.TextColumn(width="large"),
+    },
+)
 st.caption(
-    "Only Rungs 4 and 5 are built in this demo (Rungs 1-3 were scoped out — "
-    "see the README). Comparing a deterministic workflow against an agentic "
-    "loop is where the thesis actually lives."
+    "“Correct” is a per-query behavioral check (right tools called / escalated "
+    "when it should), stored in the benchmark JSON so it's auditable."
 )
-selected = st.multiselect(
-    "Rungs",
-    options=list(RUNGS.keys()),
-    default=list(RUNGS.keys()),
-    format_func=lambda lvl: f"Rung {lvl} — {RUNGS[lvl]['name']}",
-)
-run_clicked = st.button("▶️ Run All", type="primary", disabled=not selected)
 
-if run_clicked:
-    st.session_state["results"] = {}
-    st.session_state["errors"] = {}
-    st.session_state["last_query"] = query
+st.divider()
 
-    # Sequential on purpose: fair latency comparison + Groq free-tier rate
-    # limits (~30 req/min) would be hit by fanning out (§9).
-    for level in sorted(selected):
-        info = RUNGS[level]
-        with st.spinner(f"Running Rung {level} — {info['name']}..."):
-            try:
-                result: RungResult = info["run"](query)
-                st.session_state["results"][level] = result
-            except MissingAPIKeyError:
-                st.session_state["errors"][level] = (
-                    "No Groq API key configured. Set GROQ_API_KEY in your "
-                    "environment or .env file."
-                )
-            except LLMError as exc:
-                msg = str(exc)
-                if "429" in msg or "rate" in msg.lower():
-                    st.session_state["errors"][level] = (
-                        "Groq's free-tier rate limit was hit while running "
-                        "this rung. Wait a minute and try again — this isn't "
-                        "a bug in the rung itself."
-                    )
-                else:
-                    st.session_state["errors"][level] = f"LLM call failed: {msg}"
-            except Exception as exc:  # noqa: BLE001 - surface any failure in the UI
-                st.session_state["errors"][level] = f"Unexpected error: {exc}"
+# ===========================================================================
+# 5. CTA row
+# ===========================================================================
 
-# ---------------------------------------------------------------------------
-# 4. Results — one expandable panel per rung
-# ---------------------------------------------------------------------------
-
-results: dict[int, RungResult] = st.session_state.get("results", {})
-errors: dict[int, str] = st.session_state.get("errors", {})
-
-if results or errors:
-    st.subheader("3. Results")
-
-    for level in sorted(set(results) | set(errors)):
-        info = RUNGS[level]
-        if level in errors:
-            with st.expander(f"⚠️ Rung {level} — {info['name']} (failed)", expanded=True):
-                st.error(errors[level])
-            continue
-
-        res = results[level]
-        warn = " ⚠️" if res.step_budget_breached else ""
-        with st.expander(
-            f"Rung {level} — {info['name']}{warn}", expanded=True
-        ):
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Latency", f"{res.latency_ms:,} ms")
-            m2.metric("Tokens", f"{res.input_tokens + res.output_tokens:,}")
-            m3.metric("Cost", f"${res.cost_usd:.6f}")
-            m4.metric("Cost / 10k queries", f"${res.cost_usd * 10_000:,.2f}")
-
-            if res.step_budget_breached:
-                st.warning("Step budget was exhausted — forced escalation to a human.")
-            elif res.escalated:
-                st.info("This rung escalated to a human.")
-
-            st.markdown("**Final answer:**")
-            st.write(res.final_answer)
-
-            st.markdown("**Trace:**")
-            for step in res.trace:
-                if step.kind == "THINK":
-                    st.markdown(f"🧠 **THINK** — {step.content}")
-                elif step.kind == "ACT":
-                    badge = RISK_BADGE.get(step.risk or "", "")
-                    st.markdown(f"⚙️ **ACT** {badge} `{step.tool}({step.args})`")
-                elif step.kind == "OBSERVE":
-                    if step.content == "🟡 WRITE ACTION LOGGED":
-                        st.markdown("🟡 **WRITE ACTION LOGGED**")
-                    else:
-                        st.markdown(f"👁️ **OBSERVE** — `{step.content}`")
-                elif step.kind == "ANSWER":
-                    st.markdown(f"✅ **ANSWER** — {step.content}")
-
-# ---------------------------------------------------------------------------
-# 5. The money shot — comparison table
-# ---------------------------------------------------------------------------
-
-if results or errors:
-    st.subheader("4. Comparison")
-
-    rows = []
-    for level in sorted(RUNGS):
-        info = RUNGS[level]
-        if level in errors:
-            rows.append(
-                {
-                    "Rung": f"Rung {level} — {info['name']}",
-                    "Answered?": "❌ Failed",
-                    "Latency (ms)": None,
-                    "Tokens": None,
-                    "Cost (USD)": None,
-                    "Cost / 10k queries": None,
-                }
-            )
-        elif level in results:
-            res = results[level]
-            if res.step_budget_breached:
-                answered = "⚠️ Budget breached"
-            elif res.escalated:
-                answered = "🔵 Escalated"
-            elif res.final_answer:
-                answered = "✅ Yes"
-            else:
-                answered = "❌ No answer"
-            rows.append(
-                {
-                    "Rung": f"Rung {level} — {info['name']}",
-                    "Answered?": answered,
-                    "Latency (ms)": res.latency_ms,
-                    "Tokens": res.input_tokens + res.output_tokens,
-                    "Cost (USD)": round(res.cost_usd, 6),
-                    "Cost / 10k queries": round(res.cost_usd * 10_000, 2),
-                }
-            )
-
-    df = pd.DataFrame(rows).set_index("Rung")
-    st.dataframe(df, use_container_width=True)
-    st.caption(
-        "\"Answered?\" reflects whether the rung completed without error — "
-        "not an automated correctness grader. Escalation is a legitimate, "
-        "designed outcome, not a failure."
-    )
-
-    # ---------------------------------------------------------------------
-    # 6. Bar chart — cost and latency by rung
-    # ---------------------------------------------------------------------
-    chart_df = df.dropna(subset=["Latency (ms)"])
-    if not chart_df.empty:
-        c1, c2 = st.columns(2)
-        with c1:
-            st.caption("Latency by rung (ms)")
-            st.bar_chart(chart_df[["Latency (ms)"]])
-        with c2:
-            st.caption("Cost per 10,000 queries (USD)")
-            st.bar_chart(chart_df[["Cost / 10k queries"]])
-
-    # ---------------------------------------------------------------------
-    # 7. Callout — rule-based takeaway sentence
-    # ---------------------------------------------------------------------
-    ok_levels = [lvl for lvl in results if lvl not in errors]
-    if len(ok_levels) == 2:
-        lvl_lo, lvl_hi = sorted(ok_levels)
-        r_lo, r_hi = results[lvl_lo], results[lvl_hi]
-
-        def _answered_ok(r: RungResult) -> bool:
-            return bool(r.final_answer) and not r.step_budget_breached
-
-        lo_ok, hi_ok = _answered_ok(r_lo), _answered_ok(r_hi)
-        lat_ratio = (r_hi.latency_ms / r_lo.latency_ms) if r_lo.latency_ms else float("inf")
-        cost_ratio = (r_hi.cost_usd / r_lo.cost_usd) if r_lo.cost_usd else float("inf")
-
-        if lo_ok and hi_ok:
-            if lat_ratio >= 1.5 or cost_ratio >= 1.5:
-                takeaway = (
-                    f"Both Rung {lvl_lo} and Rung {lvl_hi} answered this query. "
-                    f"Rung {lvl_hi} took {lat_ratio:.1f}× longer and cost "
-                    f"{cost_ratio:.1f}× more. For this query, Rung {lvl_lo} "
-                    "is the right design choice."
-                )
-            else:
-                takeaway = (
-                    f"Both Rung {lvl_lo} and Rung {lvl_hi} answered this query "
-                    "at similar cost and latency — the simpler rung's "
-                    "reliability isn't being bought at a premium here."
-                )
-        elif hi_ok and not lo_ok:
-            takeaway = (
-                f"Rung {lvl_lo} could not resolve this query on its fixed "
-                f"path; Rung {lvl_hi}'s model-controlled discovery was "
-                "needed. This is exactly the case where the extra cost and "
-                "latency of a higher rung is justified."
-            )
-        elif lo_ok and not hi_ok:
-            takeaway = (
-                f"Rung {lvl_lo} answered directly; Rung {lvl_hi} escalated or "
-                "exhausted its step budget on the same query. More agency "
-                "did not produce a better outcome here."
-            )
-        else:
-            takeaway = (
-                f"Neither Rung {lvl_lo} nor Rung {lvl_hi} produced a "
-                "resolving answer for this query — both escalated or hit "
-                "their limits."
-            )
-        st.info(f"**Takeaway:** {takeaway}")
-else:
-    st.info("Pick a query, choose rungs, and click **Run All** to see results.")
+_cta_row()
