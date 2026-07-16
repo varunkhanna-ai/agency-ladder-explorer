@@ -88,6 +88,16 @@ st.caption(
     f"[View source]({GITHUB_URL})"
 )
 
+st.markdown("---")
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown("[📧 Email](mailto:mailvarunkhanna@gmail.com)")
+with col2:
+    st.markdown("[🔗 LinkedIn](https://www.linkedin.com/in/khannavarun/)")
+with col3:
+    st.markdown(f"[💻 GitHub]({GITHUB_URL})")
+st.markdown("---")
+
 # ---------------------------------------------------------------------------
 # 2. Query input — text box + dropdown of preset scenario queries
 # ---------------------------------------------------------------------------
