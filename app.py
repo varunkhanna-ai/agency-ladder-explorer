@@ -46,7 +46,7 @@ _PLOTLY_LAYOUT = dict(
 )
 _RUNG_COLORS = {"Rung 4 — Fixed Workflow": "#4c8bf5", "Rung 5 — ReAct Loop": "#f5a34c"}
 
-st.set_page_config(page_title="Agency Ladder Explorer", page_icon="🪜", layout="wide")
+st.set_page_config(page_title="Agent Ladder Explorer", page_icon="🪜", layout="wide")
 
 
 # ---------------------------------------------------------------------------
@@ -123,9 +123,9 @@ def render_dashboard() -> None:
     # 1. Title + one-sentence thesis
     # =======================================================================
 
-    st.title("📊 Agency Ladder — Executive Dashboard")
+    st.title("📊 Agent Ladder — Executive Dashboard")
     st.markdown(
-        "**Higher on the agency ladder is not better: the lowest rung that "
+        "**Higher on the agent ladder is not better: the lowest rung that "
         "reliably completes the task is the correct design choice.**"
     )
 

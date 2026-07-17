@@ -1,4 +1,4 @@
-# 🪜 Agency Ladder Explorer
+# 🪜 Agent Ladder Explorer
 
 **[Live Demo](https://agency-ladder-explorer-y6rsmz4pwqbd2ojhuzk4qv.streamlit.app/)** | [GitHub](https://github.com/varunkhanna-ai/agency-ladder-explorer)
 
@@ -24,7 +24,7 @@ here as docs/comparison.png, then replace this comment with:
 
 ## The thesis
 
-**Higher on the agency ladder is not better.** The lowest rung that reliably completes a task is the correct design choice — everything above that is cost and latency you're paying for optionality you didn't need.
+**Higher on the agent ladder is not better.** The lowest rung that reliably completes a task is the correct design choice — everything above that is cost and latency you're paying for optionality you didn't need.
 
 **Headline result:** on a simple, unambiguous refund request, the fixed workflow (Rung 4) and the ReAct agent (Rung 5) reach the same outcome, but the agent pays a real tax to get there in extra tokens, extra latency, and extra tool calls it didn't strictly need — because it has to *discover* the path the workflow was just handed. See the [Results](#results-real-measured-numbers) section below for the actual numbers from this repo.
 

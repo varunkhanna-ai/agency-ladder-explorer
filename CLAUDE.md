@@ -1,8 +1,8 @@
-# Agency Ladder Explorer — Project Context
+# Agent Ladder Explorer — Project Context
 
 ## What this is
 A teaching demo that answers the same DeliverEase customer-support query at 5 rungs of the
-agency ladder (static prompt → RAG → single tool call → fixed workflow → ReAct loop) and
+agent ladder (static prompt → RAG → single tool call → fixed workflow → ReAct loop) and
 measures cost, latency, and tokens at each. Thesis: higher on the ladder is not better; the
 lowest rung that reliably completes the task is the correct design choice.
 
