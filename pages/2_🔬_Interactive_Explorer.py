@@ -88,6 +88,23 @@ st.caption(
     f"[View source]({GITHUB_URL})"
 )
 
+st.markdown(
+    "This demo focuses on Rungs 4 and 5 of the agency ladder to illustrate "
+    "the core tradeoff: deterministic workflow vs. agentic reasoning. "
+    "(Rungs 1–3 were deliberately scoped out.)"
+)
+st.markdown(
+    """
+| Rung | Name | Who controls the path? | Built here? | When you'd choose it |
+|---|---|---|---|---|
+| 1 | Static Prompt | Developer (no tools at all) | ❌ scoped out | Query never needs live data — pure policy/FAQ text |
+| 2 | RAG | Developer (retrieval is hardcoded) | ❌ scoped out | Answer lives in a document, but doesn't require fresh state |
+| 3 | Single Tool Call | Developer decides *that* + *which* tool; model decides args | ❌ scoped out | One clear lookup, no branching logic needed |
+| 4 | Fixed Workflow | **Developer** — the model extracts and phrases, never routes | ✅ | The steps and branching logic are known in advance and don't change per query |
+| 5 | ReAct Loop | **Model** — decides which tools, in what order, when to stop | ✅ | The path can't be known in advance; the query requires investigation |
+"""
+)
+
 st.warning(
     "Live calls use Groq's free tier, which has a tight daily token quota. If "
     "a rung shows a rate-limit message, that's the quota, not a bug — the "
