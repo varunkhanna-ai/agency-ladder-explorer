@@ -374,28 +374,44 @@ if results or errors:
         # wrongly) while Rung 5 escalates" would fall through to the generic
         # "more agency didn't help" framing and implicitly vouch for Rung 4's
         # answer as correct, which we have no basis to claim.
+        rung4_action = (
+            "issued a coupon" if "issue_refund_coupon" in r_lo.tools_called
+            else "declined a refund"
+        )
+
         if lo_ok and rung4_off_path and hi_ok:
             takeaway = (
-                f"Rung {lvl_lo} completed without error, but this isn't a "
-                "cold-food/quality refund complaint — its fixed workflow is "
-                "only built to evaluate that one situation, so completing "
-                "doesn't mean it answered correctly. Rung 5 actually "
-                "investigated the real situation. "
+                f"Rung {lvl_lo} {rung4_action} quickly by applying its one "
+                "fixed rule for cold-food complaints — but this isn't that "
+                "kind of complaint, so speed doesn't mean it got the right "
+                "answer (check its trace above for what it actually based "
+                f"that on). Rung {lvl_hi} took longer because it actually "
+                "investigated the real situation before answering. "
                 + _ratio_phrase(
-                    r_hi.cost_usd, r_lo.cost_usd, f"Rung {lvl_hi}", f"Rung {lvl_lo}",
-                    "more expensive", "cheaper",
+                    r_hi.latency_ms, r_lo.latency_ms, f"Rung {lvl_hi}", f"Rung {lvl_lo}",
+                    "slower", "faster",
                 )
-                + " — Rung 5 likely succeeded where Rung 4 failed, at a cost premium."
+                + f". The right choice depends on whether speed or accuracy "
+                f"matters more here: Rung {lvl_lo} if you need a fast answer "
+                f"and can tolerate an occasional wrong one; Rung {lvl_hi} if "
+                "the answer actually needs to be right."
             )
         elif lo_ok and rung4_off_path and not hi_ok:
             takeaway = (
-                f"Rung {lvl_lo} completed without error, but this isn't a "
-                "cold-food/quality refund complaint — its fixed workflow is "
-                "only built to evaluate that one situation, so completing "
-                "doesn't mean it answered correctly (check the trace above "
-                f"for what it actually did). Rung {lvl_hi} escalated or "
-                "exhausted its step budget instead of guessing. Neither "
-                "rung's outcome should be trusted at face value here."
+                f"Rung {lvl_lo} {rung4_action} quickly by applying its one "
+                "fixed rule for cold-food complaints — but this isn't that "
+                "kind of complaint, so its speed doesn't mean it got the "
+                "right answer (check its trace above for what it actually "
+                f"based that on, applying a generic rule to a situation it "
+                f"wasn't built to evaluate). Rung {lvl_hi}, instead of "
+                "guessing, kept investigating once it recognized the "
+                "situation was more complex than a simple refund — and ran "
+                "out of step budget before it could finish, escalating to a "
+                "human rather than answering incorrectly. The right choice "
+                "depends on whether speed or accuracy matters more here: "
+                f"Rung {lvl_lo} gives you a fast answer that may be wrong; "
+                f"Rung {lvl_hi} gives you no answer yet, but never a "
+                "confidently wrong one."
             )
         elif lo_ok and hi_ok:
             if notable:
