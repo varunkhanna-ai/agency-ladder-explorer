@@ -2,7 +2,13 @@
 
 **[Live Demo](https://agency-ladder-explorer-y6rsmz4pwqbd2ojhuzk4qv.streamlit.app/)** | [GitHub](https://github.com/varunkhanna-ai/agency-ladder-explorer)
 
+## Get in Touch
+
+Built by [Varun Khanna](https://www.linkedin.com/in/khannavarun/) | [Email me](mailto:mailvarunkhanna@gmail.com)
+
 **One customer-support query, two ways to build the agent that answers it — measured, not argued.**
+
+
 
 <!-- SCREENSHOT: run the app locally (`streamlit run app.py`), run the ORD-1200
 comparison, and drop a screenshot of the "4. Comparison" table + bar charts
