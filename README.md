@@ -197,6 +197,46 @@ the policy dynamically and reasons over it. For this query, Rung 4 fails; Rung 5
 
 ---
 
+## The UI: a static dashboard + a live explorer
+
+The app is a two-page Streamlit app (`st.navigation`/`st.Page`), split so the
+landing page loads instantly with no API dependency:
+
+- **`app.py` — Executive Dashboard** (the landing page). Reads only
+  `data/benchmark_results.json` and makes **no live LLM calls**. Five
+  sections: the thesis, a metric strip (cost/latency multiples + per-tier win
+  rates, all computed from the JSON at render time — never hardcoded), two
+  Plotly grouped bar charts (cost and latency by rung, log-scale on latency
+  since one run's real 602-second outlier would otherwise flatten every other
+  bar), a per-query verdict table, and a CTA row linking to the live explorer.
+- **`pages/2_🔬_Interactive_Explorer.py` — Interactive Explorer.** The original
+  live-query page: pick or type a query, run it through Rung 4 and/or Rung 5
+  against the real Groq API, and see the full THINK/ACT/OBSERVE trace, cost,
+  and latency. Opens with the same ladder table shown above, so a visitor
+  landing here directly still has the scope context. Its rule-based takeaway
+  is explicitly honest about what "completed" does and doesn't mean — Rung 4
+  always runs the same fixed cold-food-refund decision tree, so it can
+  complete without error on a query it was never built to evaluate (a
+  delivery-delay or safety case, say) while still being wrong; the takeaway
+  names that tradeoff (speed vs. accuracy) rather than implying a verdict.
+
+**`scripts/generate_benchmarks.py`** produces the dashboard's data: 9 queries
+(3 per complexity tier — simple/medium/complex) × Rungs 4 and 5, recording
+latency/tokens/cost/correctness per run, with per-tier aggregates (mean/min/
+max) written to `data/benchmark_results.json` alongside a generation
+timestamp. It's a one-time offline run whose output is committed — the
+dashboard never calls Groq itself. Regenerate it with:
+
+```bash
+./.venv/bin/python scripts/generate_benchmarks.py
+```
+
+Both `app.py` and the page under `pages/` import Streamlit; everything under
+`src/` stays plain Python returning structured data, so a future FastAPI/
+Vercel migration only touches the UI layer, not the rung logic.
+
+---
+
 ## Running it locally
 
 ```bash
@@ -208,9 +248,10 @@ echo "GROQ_API_KEY=your_key_here" > .env   # free key from https://console.groq.
 streamlit run app.py
 ```
 
-`app.py` is the only file that imports Streamlit; everything under `src/` is
-plain Python returning structured data, so a future FastAPI/Vercel frontend
-would only replace `app.py`.
+This lands on the **Executive Dashboard**, which works immediately since
+`data/benchmark_results.json` is already committed — no API key needed just to
+view it. The `GROQ_API_KEY` is only required for the **Interactive Explorer**
+page (live queries) and for regenerating the benchmark data.
 
 ## Deployment
 
@@ -227,11 +268,11 @@ Deployed on **Streamlit Community Cloud**:
 
 ## What I'd do next
 
-- **Fleet metrics dashboard** — this demo measures one query at a time; a real eval suite needs correct-tool-rate and misroute-rate aggregated over hundreds of runs, not a single trace.
+- **Fleet metrics dashboard** — the Executive Dashboard already built here is a fixed 9-query snapshot with hand-authored correctness rules; a real fleet dashboard needs correct-tool-rate and misroute-rate aggregated over hundreds of live, varied runs, not a static benchmark.
 - **Rungs 1–3** — for completeness of the ladder story, though the core tradeoff this demo makes visible doesn't need them.
 - **A multi-agent boundary** — e.g. a fraud-check sub-agent the ReAct loop can hand off to, to show where Rung 6 (multi-agent, out of scope here) actually earns its complexity.
 - **🔴 tool approval gates** — a real runtime confirmation flow for irreversible actions (`cancel_order`, `send_sms_to_customer`), which this demo deliberately didn't build.
-- **FastAPI + Next.js/Vercel frontend** — `src/` was kept UI-free specifically so this migration only touches the UI layer; `app.py` is the only file that imports Streamlit.
+- **FastAPI + Next.js/Vercel frontend** — `src/` was kept UI-free specifically so this migration only touches the UI layer (`app.py` + `pages/`).
 
 ---
 

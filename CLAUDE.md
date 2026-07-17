@@ -40,6 +40,64 @@ Before ending any session (whether switching tools, or finishing a parallel work
 ## Session Notes
 <!-- Newest entries at the top. Both Kilo Code and Claude Code append here. -->
 
+- **2026-07-16 (Claude Code):** Post-Phase-8 follow-ups, all on `claude-phase7`
+  → merged to `main`. This is a substantial addendum to the "Phases 7+8
+  complete" entry below — the UI has changed shape since that commit.
+  - **Executive Dashboard added as the landing page.** Restructured `app.py`
+    into a Streamlit multipage app via `st.navigation`/`st.Page`: `app.py` is
+    now a **static** dashboard (thesis, metric strip, 2 Plotly grouped bar
+    charts, verdict table, CTA row) that reads only
+    `data/benchmark_results.json` and makes **no live LLM calls**; the
+    original live-query UI moved to `pages/2_🔬_Interactive_Explorer.py`.
+    Both files import Streamlit now — `src/` is still the only UI-free layer,
+    not literally "one file" anymore.
+  - **`scripts/generate_benchmarks.py`** (new): runs 9 queries (3 per
+    complexity tier) × Rungs 4/5, records latency/tokens/cost/correctness per
+    run + per-tier mean/min/max aggregates + a generation timestamp to
+    `data/benchmark_results.json`. Run once, commit the output — the
+    dashboard never calls Groq. **First run hit Groq's 100K TPD cap after only
+    3/18 calls** (today's cumulative usage from earlier phases) — do not
+    assume a clean run on the first try if the day's quota is already warm.
+    Second run (after quota reset) completed 17/18; the one failure (a
+    transient `400 tool_use_failed` malformed generation, not a rate limit)
+    is recorded transparently in the JSON and excluded from that cell's mean,
+    not hidden. `is_complete()` in `app.py` checks per-cell aggregate
+    usability, not zero-raw-errors, specifically so one bad run doesn't block
+    the whole dashboard.
+  - **Real finding surfaced by live data, kept rather than hidden:** one
+    medium-tier Rung 5 run took a genuine 602 seconds. The dashboard shows
+    the true mean (not filtered), a caption disclosing the range, and the
+    latency chart uses a log-scale y-axis so the outlier doesn't flatten
+    every other bar — a readability fix, not a data change.
+  - **Fixed a real correctness bug** in the Explorer's rule-based takeaway:
+    it always said "Rung {hi} took {ratio}× longer/more" using rung *number*
+    order, not which rung actually was slower — so a live run where Rung 4
+    happened to be slower would print nonsense like "Rung 5 took 0.5×
+    longer." Replaced with direction-aware phrasing
+    (`_ratio_phrase`/`_ratio_magnitude`).
+  - **"Answered?" renamed to "Completed?"** with a caption clarifying it's
+    not a correctness grader — Rung 4 always runs its one fixed cold-food-
+    refund decision tree regardless of the actual query, so it can "complete"
+    while being wrong. On the 4 known preset queries outside that domain
+    (weather delay, backed-up restaurant, plain status check, allergic
+    reaction), the column flags "⚠️ off-path for this query type" and the
+    takeaway names the real tradeoff (fast-but-possibly-wrong vs. slower-
+    because-it-investigated) instead of implying a verdict. Caught via a live
+    test on the ORD-9821 preset: Rung 4 issued an $18.50 "cold food" coupon
+    for what the retrieved policy shows should be a $5–10 delivery-delay
+    coupon, while Rung 5 escalated on budget exhaustion — the first version
+    of this fix only covered the "both rungs complete" case and let this
+    exact scenario fall through to language that implicitly vouched for
+    Rung 4's wrong answer.
+  - Also: added the ladder reference table (Rungs 1–5) to the top of the
+    Interactive Explorer page for scope context; removed a duplicated
+    "Final answer" block that repeated the trace's trailing ANSWER step.
+  - **README.md updated** to match: new "The UI: a static dashboard + a live
+    explorer" section, fixed two now-false "`app.py` is the only file that
+    imports Streamlit" claims, "Running it locally" now explains the
+    dashboard works with no API key (reads committed JSON) while the
+    Explorer needs `GROQ_API_KEY`.
+
 - **2026-07-15 (Claude Code):** Phases 7+8 complete. Streamlit UI built with all rungs 4–5, comparison table, cost/latency chart, and callout logic. README complete with thesis, eval findings, ReAct trace, and portfolio framing. Live demo deployed to Streamlit Community Cloud at https://agency-ladder-explorer-y6rsmz4pwqbd2ojhuzk4qv.streamlit.app/
 
 - **2026-07-15 (Kilo Code):** Phase 6 complete — `evals/cases.py` (12 EvalCase definitions T01-T12 per §8) + `evals/test_trajectory.py` (trajectory-level pytest assertions on tool sequence + args, not final text). 9/12 pass live (Rung 4+5 cases), 3 skipped (T01-T03, rungs 1-3 not built), T12 marked xfail (non-deterministic wrong-first-guess recovery). step_budget_breach tested. Groq free-tier TPD (100K) recharged daily — run tests once per day. Run with `python3 -m pytest evals/ -v`.
