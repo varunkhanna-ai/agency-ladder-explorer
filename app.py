@@ -175,32 +175,32 @@ def render_dashboard() -> None:
     cost_mult = cost5 / cost4 if cost4 else float("nan")
     lat_mult = lat5 / lat4 if lat4 else float("nan")
 
-    simple_wins = by_tier["simple"]["r5_wins_over_r4"]
-    simple_n = by_tier["simple"]["n_queries"]
-    complex_fails = by_tier["complex"]["r4_fail_count"]
-    complex_n = by_tier["complex"]["n_queries"]
-
-    m1, m2, m3, m4 = st.columns(4)
+    m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric(
-        "Rung 5 cost / query",
+        "Cost / query",
         f"${cost5:.6f}",
         delta=f"{cost_mult:.1f}× vs Rung 4",
         delta_color="inverse",  # more expensive = red
     )
     m2.metric(
-        "Rung 5 latency / query",
+        "Latency / query",
         f"{lat5:,.0f} ms",
         delta=f"{lat_mult:.1f}× vs Rung 4",
         delta_color="inverse",  # slower = red
     )
-    m3.metric(
-        "Simple queries where Rung 5 wins",
-        f"{simple_wins} of {simple_n}",
-    )
-    m4.metric(
-        "Complex queries where Rung 4 fails",
-        f"{complex_fails} of {complex_n}",
-    )
+    for col, tier, label in (
+        (m3, "simple", "Simple win rate"),
+        (m4, "medium", "Medium win rate"),
+        (m5, "complex", "Complex win rate"),
+    ):
+        cell = by_tier[tier]
+        n = cell["n_queries"]
+        col.metric(
+            f"{label} (of {n})",
+            f"Rung 5: {cell['5']['correct_count']}",
+            delta=f"Rung 4: {cell['4']['correct_count']}",
+            delta_color="off",
+        )
 
     lat5_min = overall["5"]["latency_ms"]["min"]
     lat5_max = overall["5"]["latency_ms"]["max"]
