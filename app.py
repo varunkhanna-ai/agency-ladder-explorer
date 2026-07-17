@@ -64,17 +64,29 @@ def load_benchmarks() -> dict | None:
 
 
 def is_complete(data: dict) -> bool:
-    """True only if every run succeeded and every aggregate mean is present."""
+    """True if every rung × tier cell has a usable (non-null) aggregate mean.
+
+    A single run failing (e.g. a transient malformed tool-call generation)
+    doesn't invalidate the whole benchmark as long as each cell still has at
+    least one successful run to average — the aggregation already drops
+    failed runs from the mean/min/max (see build_aggregates in
+    scripts/generate_benchmarks.py). We only refuse to render if a whole
+    cell has zero usable data.
+    """
     runs = data.get("runs", [])
-    if not runs or any(r.get("error") for r in runs):
+    by_tier = data.get("aggregates", {}).get("by_tier", {})
+    if not runs or not by_tier:
         return False
-    agg = data.get("aggregates", {})
-    overall = agg.get("overall", {})
-    for lvl in ("4", "5"):
-        cell = overall.get(lvl, {})
-        if not cell.get("cost_usd") or not cell.get("latency_ms"):
-            return False
+    for tier_cell in by_tier.values():
+        for lvl in ("4", "5"):
+            cell = tier_cell.get(lvl, {})
+            if not cell.get("cost_usd") or not cell.get("latency_ms"):
+                return False
     return True
+
+
+def _n_failed_runs(data: dict) -> int:
+    return sum(1 for r in data.get("runs", []) if r.get("error"))
 
 
 def _fmt_when(iso: str) -> str:
@@ -128,11 +140,19 @@ if data is None or not is_complete(data):
     _cta_row()
     st.stop()
 
+n_failed = _n_failed_runs(data)
+completeness_note = (
+    f" {n_failed} of {len(data['runs'])} raw runs hit a transient provider "
+    "error and are excluded from the affected cell's mean (visible as a "
+    "narrower sample, not papered over)."
+    if n_failed
+    else ""
+)
 st.caption(
     f"Static benchmark — {len(data['runs'])} runs "
     f"({data['aggregates']['by_tier']['simple']['n_queries']} queries per tier "
     f"× {len(RUNG_LABELS)} rungs). Generated {_fmt_when(data['generated_at'])}. "
-    "No live model calls on this page."
+    f"No live model calls on this page.{completeness_note}"
 )
 
 overall = data["aggregates"]["overall"]
@@ -177,6 +197,15 @@ m4.metric(
     f"{complex_fails} of {complex_n}",
 )
 
+lat5_min = overall["5"]["latency_ms"]["min"]
+lat5_max = overall["5"]["latency_ms"]["max"]
+st.caption(
+    f"Rung 5 latency ranged {lat5_min:,.0f}–{lat5_max:,.0f} ms across "
+    f"{overall['5']['n']} runs; the mean above reflects real observed "
+    "variance (including provider-side slow responses), not a filtered "
+    "best case."
+)
+
 st.divider()
 
 # ===========================================================================
@@ -214,7 +243,7 @@ with left:
     fig_cost.update_layout(**_PLOTLY_LAYOUT)
     st.plotly_chart(fig_cost, use_container_width=True)
 with right:
-    st.markdown("**Latency per query by rung**")
+    st.markdown("**Latency per query by rung** _(log scale — see note above)_")
     fig_lat = px.bar(
         chart_df,
         x="Complexity",
@@ -223,6 +252,7 @@ with right:
         barmode="group",
         category_orders={"Complexity": tier_order},
         color_discrete_map=_RUNG_COLORS,
+        log_y=True,
     )
     fig_lat.update_layout(**_PLOTLY_LAYOUT)
     st.plotly_chart(fig_lat, use_container_width=True)

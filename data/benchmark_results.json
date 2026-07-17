@@ -1,0 +1,656 @@
+{
+  "generated_at": "2026-07-17T02:08:33.339234+00:00",
+  "model": "llama-3.3-70b-versatile",
+  "note": "Static benchmark for the executive dashboard. Generated once by scripts/generate_benchmarks.py; the dashboard reads only this file and makes no live LLM calls. Multiples (N\u00d7 slower / more expensive) are computed from aggregates at render time.",
+  "tiers": [
+    "simple",
+    "medium",
+    "complex"
+  ],
+  "rungs": {
+    "4": "Fixed Workflow",
+    "5": "ReAct Loop"
+  },
+  "runs": [
+    {
+      "query_id": "S1",
+      "tier": "simple",
+      "query": "My order ORD-1200 arrived stone cold and the cheese was congealed. I'd like a refund.",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 1793,
+      "input_tokens": 483,
+      "output_tokens": 233,
+      "total_tokens": 716,
+      "cost_usd": 0.00046904,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy"
+      ],
+      "correctness_rule": "Looks up the order and resolves the refund without escalating or breaching the step budget.",
+      "correct": true
+    },
+    {
+      "query_id": "S1",
+      "tier": "simple",
+      "query": "My order ORD-1200 arrived stone cold and the cheese was congealed. I'd like a refund.",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 2264,
+      "input_tokens": 7756,
+      "output_tokens": 191,
+      "total_tokens": 7947,
+      "cost_usd": 0.00472693,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "search_refund_policy",
+        "get_order_status",
+        "get_order_status",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Looks up the order and resolves the refund without escalating or breaching the step budget.",
+      "correct": true
+    },
+    {
+      "query_id": "S2",
+      "tier": "simple",
+      "query": "ORD-1201 showed up cold and unappetizing. Can I get a refund?",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 1235,
+      "input_tokens": 480,
+      "output_tokens": 246,
+      "total_tokens": 726,
+      "cost_usd": 0.00047754000000000004,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy"
+      ],
+      "correctness_rule": "Looks up the order and resolves the refund without escalating or breaching the step budget.",
+      "correct": true
+    },
+    {
+      "query_id": "S2",
+      "tier": "simple",
+      "query": "ORD-1201 showed up cold and unappetizing. Can I get a refund?",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 7998,
+      "input_tokens": 5900,
+      "output_tokens": 201,
+      "total_tokens": 6101,
+      "cost_usd": 0.0036397899999999995,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "search_refund_policy",
+        "get_order_status",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Looks up the order and resolves the refund without escalating or breaching the step budget.",
+      "correct": true
+    },
+    {
+      "query_id": "S3",
+      "tier": "simple",
+      "query": "The food from ORD-3003 was cold on arrival. Requesting a refund.",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 2637,
+      "input_tokens": 558,
+      "output_tokens": 265,
+      "total_tokens": 823,
+      "cost_usd": 0.0005385699999999999,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy"
+      ],
+      "correctness_rule": "Looks up the order and resolves the refund without escalating or breaching the step budget.",
+      "correct": true
+    },
+    {
+      "query_id": "S3",
+      "tier": "simple",
+      "query": "The food from ORD-3003 was cold on arrival. Requesting a refund.",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 37218,
+      "input_tokens": 7737,
+      "output_tokens": 169,
+      "total_tokens": 7906,
+      "cost_usd": 0.00469834,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "search_refund_policy",
+        "get_order_status",
+        "get_order_status",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Looks up the order and resolves the refund without escalating or breaching the step budget.",
+      "correct": true
+    },
+    {
+      "query_id": "M1",
+      "tier": "medium",
+      "query": "My order ORD-9821 is over 30 minutes late. What delay compensation can I get?",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 1986,
+      "input_tokens": 597,
+      "output_tokens": 96,
+      "total_tokens": 693,
+      "cost_usd": 0.00042807,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Retrieves refund policy before answering; does not breach budget.",
+      "correct": true
+    },
+    {
+      "query_id": "M1",
+      "tier": "medium",
+      "query": "My order ORD-9821 is over 30 minutes late. What delay compensation can I get?",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": "LLM call failed: Error code: 400 - {'error': {'message': \"Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '<function=search_refund_policy>{\"query\":\"delivery delay compensation\"</function>'}}",
+      "latency_ms": null,
+      "input_tokens": null,
+      "output_tokens": null,
+      "total_tokens": null,
+      "cost_usd": null,
+      "escalated": null,
+      "step_budget_breached": null,
+      "tools_called": [],
+      "correctness_rule": "Retrieves refund policy before answering; does not breach budget.",
+      "correct": false
+    },
+    {
+      "query_id": "M2",
+      "tier": "medium",
+      "query": "ORD-4471 is running really late. What's your policy on refunds for delivery delays?",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 619,
+      "input_tokens": 499,
+      "output_tokens": 86,
+      "total_tokens": 585,
+      "cost_usd": 0.00036235,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Retrieves refund policy before answering; does not breach budget.",
+      "correct": true
+    },
+    {
+      "query_id": "M2",
+      "tier": "medium",
+      "query": "ORD-4471 is running really late. What's your policy on refunds for delivery delays?",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 27297,
+      "input_tokens": 5636,
+      "output_tokens": 150,
+      "total_tokens": 5786,
+      "cost_usd": 0.0034437400000000003,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "search_refund_policy",
+        "get_order_status",
+        "get_driver_gps"
+      ],
+      "correctness_rule": "Retrieves refund policy before answering; does not breach budget.",
+      "correct": true
+    },
+    {
+      "query_id": "M3",
+      "tier": "medium",
+      "query": "ORD-6100 is taking forever. Am I owed anything for the delay?",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 876,
+      "input_tokens": 496,
+      "output_tokens": 85,
+      "total_tokens": 581,
+      "cost_usd": 0.00035979,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Retrieves refund policy before answering; does not breach budget.",
+      "correct": true
+    },
+    {
+      "query_id": "M3",
+      "tier": "medium",
+      "query": "ORD-6100 is taking forever. Am I owed anything for the delay?",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 602606,
+      "input_tokens": 7497,
+      "output_tokens": 188,
+      "total_tokens": 7685,
+      "cost_usd": 0.00457175,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "get_driver_gps",
+        "search_refund_policy",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Retrieves refund policy before answering; does not breach budget.",
+      "correct": true
+    },
+    {
+      "query_id": "C1",
+      "tier": "complex",
+      "query": "ORD-9821 is late, it's pouring rain outside, and the restaurant isn't answering. What's happening?",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 868,
+      "input_tokens": 504,
+      "output_tokens": 85,
+      "total_tokens": 589,
+      "cost_usd": 0.00036450999999999996,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Investigates the real situation (weather AND restaurant status) or escalates \u2014 rather than blindly issuing a refund.",
+      "correct": false
+    },
+    {
+      "query_id": "C1",
+      "tier": "complex",
+      "query": "ORD-9821 is late, it's pouring rain outside, and the restaurant isn't answering. What's happening?",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 7518,
+      "input_tokens": 7363,
+      "output_tokens": 201,
+      "total_tokens": 7564,
+      "cost_usd": 0.004502959999999999,
+      "escalated": true,
+      "step_budget_breached": true,
+      "tools_called": [
+        "get_order_status",
+        "get_weather",
+        "get_driver_gps",
+        "get_restaurant_status",
+        "search_refund_policy",
+        "escalate_to_human"
+      ],
+      "correctness_rule": "Investigates the real situation (weather AND restaurant status) or escalates \u2014 rather than blindly issuing a refund.",
+      "correct": true
+    },
+    {
+      "query_id": "C2",
+      "tier": "complex",
+      "query": "I had an allergic reaction after eating my ORD-3003 order. What should I do?",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 756,
+      "input_tokens": 479,
+      "output_tokens": 198,
+      "total_tokens": 677,
+      "cost_usd": 0.00043903,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy"
+      ],
+      "correctness_rule": "Escalates to a human \u2014 an allergic reaction is a safety issue, not a refund-workflow decision.",
+      "correct": false
+    },
+    {
+      "query_id": "C2",
+      "tier": "complex",
+      "query": "I had an allergic reaction after eating my ORD-3003 order. What should I do?",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 5672,
+      "input_tokens": 1291,
+      "output_tokens": 53,
+      "total_tokens": 1344,
+      "cost_usd": 0.00080356,
+      "escalated": true,
+      "step_budget_breached": false,
+      "tools_called": [
+        "escalate_to_human"
+      ],
+      "correctness_rule": "Escalates to a human \u2014 an allergic reaction is a safety issue, not a refund-workflow decision.",
+      "correct": true
+    },
+    {
+      "query_id": "C3",
+      "tier": "complex",
+      "query": "Please cancel my order ORD-7788 right now.",
+      "rung": 4,
+      "rung_name": "Fixed Workflow",
+      "error": null,
+      "latency_ms": 707,
+      "input_tokens": 491,
+      "output_tokens": 86,
+      "total_tokens": 577,
+      "cost_usd": 0.00035763,
+      "escalated": false,
+      "step_budget_breached": false,
+      "tools_called": [
+        "get_order_status",
+        "search_refund_policy",
+        "issue_refund_coupon"
+      ],
+      "correctness_rule": "Escalates \u2014 cancellation is outside the allowed actions and must not be resolved as a refund.",
+      "correct": false
+    },
+    {
+      "query_id": "C3",
+      "tier": "complex",
+      "query": "Please cancel my order ORD-7788 right now.",
+      "rung": 5,
+      "rung_name": "ReAct Loop",
+      "error": null,
+      "latency_ms": 4412,
+      "input_tokens": 1283,
+      "output_tokens": 31,
+      "total_tokens": 1314,
+      "cost_usd": 0.00078146,
+      "escalated": true,
+      "step_budget_breached": false,
+      "tools_called": [
+        "escalate_to_human"
+      ],
+      "correctness_rule": "Escalates \u2014 cancellation is outside the allowed actions and must not be resolved as a refund.",
+      "correct": true
+    }
+  ],
+  "aggregates": {
+    "overall": {
+      "4": {
+        "n": 9,
+        "latency_ms": {
+          "mean": 1275.2222222222222,
+          "min": 619,
+          "max": 2637
+        },
+        "total_tokens": {
+          "mean": 663,
+          "min": 577,
+          "max": 823
+        },
+        "cost_usd": {
+          "mean": 0.00042183666666666667,
+          "min": 0.00035763,
+          "max": 0.0005385699999999999
+        },
+        "correct_count": 6
+      },
+      "5": {
+        "n": 9,
+        "latency_ms": {
+          "mean": 86873.125,
+          "min": 2264,
+          "max": 602606
+        },
+        "total_tokens": {
+          "mean": 5705.875,
+          "min": 1314,
+          "max": 7947
+        },
+        "cost_usd": {
+          "mean": 0.00339606625,
+          "min": 0.00078146,
+          "max": 0.00472693
+        },
+        "correct_count": 8
+      }
+    },
+    "by_tier": {
+      "simple": {
+        "4": {
+          "n": 3,
+          "latency_ms": {
+            "mean": 1888.3333333333333,
+            "min": 1235,
+            "max": 2637
+          },
+          "total_tokens": {
+            "mean": 755,
+            "min": 716,
+            "max": 823
+          },
+          "cost_usd": {
+            "mean": 0.00049505,
+            "min": 0.00046904,
+            "max": 0.0005385699999999999
+          },
+          "correct_count": 3
+        },
+        "5": {
+          "n": 3,
+          "latency_ms": {
+            "mean": 15826.666666666666,
+            "min": 2264,
+            "max": 37218
+          },
+          "total_tokens": {
+            "mean": 7318,
+            "min": 6101,
+            "max": 7947
+          },
+          "cost_usd": {
+            "mean": 0.004355019999999999,
+            "min": 0.0036397899999999995,
+            "max": 0.00472693
+          },
+          "correct_count": 3
+        },
+        "n_queries": 3,
+        "r4_fail_count": 0,
+        "r5_fail_count": 0,
+        "r5_wins_over_r4": 0
+      },
+      "medium": {
+        "4": {
+          "n": 3,
+          "latency_ms": {
+            "mean": 1160.3333333333333,
+            "min": 619,
+            "max": 1986
+          },
+          "total_tokens": {
+            "mean": 619.6666666666666,
+            "min": 581,
+            "max": 693
+          },
+          "cost_usd": {
+            "mean": 0.00038340333333333336,
+            "min": 0.00035979,
+            "max": 0.00042807
+          },
+          "correct_count": 3
+        },
+        "5": {
+          "n": 3,
+          "latency_ms": {
+            "mean": 314951.5,
+            "min": 27297,
+            "max": 602606
+          },
+          "total_tokens": {
+            "mean": 6735.5,
+            "min": 5786,
+            "max": 7685
+          },
+          "cost_usd": {
+            "mean": 0.004007745,
+            "min": 0.0034437400000000003,
+            "max": 0.00457175
+          },
+          "correct_count": 2
+        },
+        "n_queries": 3,
+        "r4_fail_count": 0,
+        "r5_fail_count": 1,
+        "r5_wins_over_r4": 0
+      },
+      "complex": {
+        "4": {
+          "n": 3,
+          "latency_ms": {
+            "mean": 777,
+            "min": 707,
+            "max": 868
+          },
+          "total_tokens": {
+            "mean": 614.3333333333334,
+            "min": 577,
+            "max": 677
+          },
+          "cost_usd": {
+            "mean": 0.00038705666666666663,
+            "min": 0.00035763,
+            "max": 0.00043903
+          },
+          "correct_count": 0
+        },
+        "5": {
+          "n": 3,
+          "latency_ms": {
+            "mean": 5867.333333333333,
+            "min": 4412,
+            "max": 7518
+          },
+          "total_tokens": {
+            "mean": 3407.3333333333335,
+            "min": 1314,
+            "max": 7564
+          },
+          "cost_usd": {
+            "mean": 0.0020293266666666664,
+            "min": 0.00078146,
+            "max": 0.004502959999999999
+          },
+          "correct_count": 3
+        },
+        "n_queries": 3,
+        "r4_fail_count": 3,
+        "r5_fail_count": 0,
+        "r5_wins_over_r4": 3
+      }
+    }
+  },
+  "verdicts": [
+    {
+      "query_id": "S1",
+      "tier": "simple",
+      "query": "My order ORD-1200 arrived stone cold and the cheese was congealed. I'd like a refund.",
+      "rung4_correct": true,
+      "rung5_correct": true,
+      "recommendation": "Both rungs succeed \u2014 use Rung 4. It reaches the same outcome for a fraction of the cost and latency."
+    },
+    {
+      "query_id": "S2",
+      "tier": "simple",
+      "query": "ORD-1201 showed up cold and unappetizing. Can I get a refund?",
+      "rung4_correct": true,
+      "rung5_correct": true,
+      "recommendation": "Both rungs succeed \u2014 use Rung 4. It reaches the same outcome for a fraction of the cost and latency."
+    },
+    {
+      "query_id": "S3",
+      "tier": "simple",
+      "query": "The food from ORD-3003 was cold on arrival. Requesting a refund.",
+      "rung4_correct": true,
+      "rung5_correct": true,
+      "recommendation": "Both rungs succeed \u2014 use Rung 4. It reaches the same outcome for a fraction of the cost and latency."
+    },
+    {
+      "query_id": "M1",
+      "tier": "medium",
+      "query": "My order ORD-9821 is over 30 minutes late. What delay compensation can I get?",
+      "rung4_correct": true,
+      "rung5_correct": false,
+      "recommendation": "Only Rung 4 succeeds \u2014 the agent added cost without a better outcome."
+    },
+    {
+      "query_id": "M2",
+      "tier": "medium",
+      "query": "ORD-4471 is running really late. What's your policy on refunds for delivery delays?",
+      "rung4_correct": true,
+      "rung5_correct": true,
+      "recommendation": "Both rungs succeed \u2014 use Rung 4. It reaches the same outcome for a fraction of the cost and latency."
+    },
+    {
+      "query_id": "M3",
+      "tier": "medium",
+      "query": "ORD-6100 is taking forever. Am I owed anything for the delay?",
+      "rung4_correct": true,
+      "rung5_correct": true,
+      "recommendation": "Both rungs succeed \u2014 use Rung 4. It reaches the same outcome for a fraction of the cost and latency."
+    },
+    {
+      "query_id": "C1",
+      "tier": "complex",
+      "query": "ORD-9821 is late, it's pouring rain outside, and the restaurant isn't answering. What's happening?",
+      "rung4_correct": false,
+      "rung5_correct": true,
+      "recommendation": "Only Rung 5 succeeds \u2014 the fixed workflow can't handle this case. The agent's flexibility earns its cost here."
+    },
+    {
+      "query_id": "C2",
+      "tier": "complex",
+      "query": "I had an allergic reaction after eating my ORD-3003 order. What should I do?",
+      "rung4_correct": false,
+      "rung5_correct": true,
+      "recommendation": "Only Rung 5 succeeds \u2014 the fixed workflow can't handle this case. The agent's flexibility earns its cost here."
+    },
+    {
+      "query_id": "C3",
+      "tier": "complex",
+      "query": "Please cancel my order ORD-7788 right now.",
+      "rung4_correct": false,
+      "rung5_correct": true,
+      "recommendation": "Only Rung 5 succeeds \u2014 the fixed workflow can't handle this case. The agent's flexibility earns its cost here."
+    }
+  ]
+}
