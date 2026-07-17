@@ -74,7 +74,8 @@ RISK_BADGE = {"GREEN": "🟢", "YELLOW": "🟡", "BLUE": "🔵"}
 
 GITHUB_URL = "https://github.com/varunkhanna-ai/agency-ladder-explorer"
 
-st.set_page_config(page_title="Interactive Explorer", page_icon="🔬", layout="wide")
+# Page config + title/icon are set by app.py's st.navigation (which runs this
+# script as a page) — calling st.set_page_config here again would error.
 
 # ---------------------------------------------------------------------------
 # 1. Header
@@ -86,7 +87,6 @@ st.caption(
     "loop) live, and watch the cost/latency gap. "
     f"[View source]({GITHUB_URL})"
 )
-st.page_link("app.py", label="← Back to the Executive Dashboard", icon="📊")
 
 st.warning(
     "Live calls use Groq's free tier, which has a tight daily token quota. If "

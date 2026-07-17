@@ -46,7 +46,7 @@ _PLOTLY_LAYOUT = dict(
 )
 _RUNG_COLORS = {"Rung 4 — Fixed Workflow": "#4c8bf5", "Rung 5 — ReAct Loop": "#f5a34c"}
 
-st.set_page_config(page_title="Executive Dashboard", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Agency Ladder Explorer", page_icon="🪜", layout="wide")
 
 
 # ---------------------------------------------------------------------------
@@ -114,185 +114,208 @@ def _cta_row() -> None:
         st.markdown(f"[💻 GitHub]({GITHUB_URL})")
 
 
-# ===========================================================================
-# 1. Title + one-sentence thesis
-# ===========================================================================
+def render_dashboard() -> None:
+    """The Executive Dashboard page — registered with a proper nav title
+    below via st.navigation, so both the sidebar and the browser tab read
+    "Executive Dashboard" instead of the script's filename ("app")."""
 
-st.title("📊 Agency Ladder — Executive Dashboard")
-st.markdown(
-    "**Higher on the agency ladder is not better: the lowest rung that "
-    "reliably completes the task is the correct design choice.**"
-)
+    # =======================================================================
+    # 1. Title + one-sentence thesis
+    # =======================================================================
 
-data = load_benchmarks()
-
-# Graceful state while the static benchmark is being (re)generated.
-if data is None or not is_complete(data):
-    st.warning(
-        "📉 **Benchmark data is being regenerated.** These numbers come from a "
-        "one-time offline run of `scripts/generate_benchmarks.py`; the last run "
-        "hit Groq's daily free-tier token limit before completing, so the full "
-        "table is pending the next run. The Interactive Explorer still works "
-        "for live queries.",
-        icon="⏳",
+    st.title("📊 Agency Ladder — Executive Dashboard")
+    st.markdown(
+        "**Higher on the agency ladder is not better: the lowest rung that "
+        "reliably completes the task is the correct design choice.**"
     )
+
+    data = load_benchmarks()
+
+    # Graceful state while the static benchmark is being (re)generated.
+    if data is None or not is_complete(data):
+        st.warning(
+            "📉 **Benchmark data is being regenerated.** These numbers come from a "
+            "one-time offline run of `scripts/generate_benchmarks.py`; the last run "
+            "hit Groq's daily free-tier token limit before completing, so the full "
+            "table is pending the next run. The Interactive Explorer still works "
+            "for live queries.",
+            icon="⏳",
+        )
+        st.divider()
+        _cta_row()
+        st.stop()
+
+    n_failed = _n_failed_runs(data)
+    completeness_note = (
+        f" {n_failed} of {len(data['runs'])} raw runs hit a transient provider "
+        "error and are excluded from the affected cell's mean (visible as a "
+        "narrower sample, not papered over)."
+        if n_failed
+        else ""
+    )
+    st.caption(
+        f"Static benchmark — {len(data['runs'])} runs "
+        f"({data['aggregates']['by_tier']['simple']['n_queries']} queries per tier "
+        f"× {len(RUNG_LABELS)} rungs). Generated {_fmt_when(data['generated_at'])}. "
+        f"No live model calls on this page.{completeness_note}"
+    )
+
+    overall = data["aggregates"]["overall"]
+    by_tier = data["aggregates"]["by_tier"]
+
+    # ===========================================================================
+    # 2. Metric strip — all multiples computed from the JSON at render time
+    # ===========================================================================
+
+    cost4 = overall["4"]["cost_usd"]["mean"]
+    cost5 = overall["5"]["cost_usd"]["mean"]
+    lat4 = overall["4"]["latency_ms"]["mean"]
+    lat5 = overall["5"]["latency_ms"]["mean"]
+
+    cost_mult = cost5 / cost4 if cost4 else float("nan")
+    lat_mult = lat5 / lat4 if lat4 else float("nan")
+
+    simple_wins = by_tier["simple"]["r5_wins_over_r4"]
+    simple_n = by_tier["simple"]["n_queries"]
+    complex_fails = by_tier["complex"]["r4_fail_count"]
+    complex_n = by_tier["complex"]["n_queries"]
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric(
+        "Rung 5 cost / query",
+        f"${cost5:.6f}",
+        delta=f"{cost_mult:.1f}× vs Rung 4",
+        delta_color="inverse",  # more expensive = red
+    )
+    m2.metric(
+        "Rung 5 latency / query",
+        f"{lat5:,.0f} ms",
+        delta=f"{lat_mult:.1f}× vs Rung 4",
+        delta_color="inverse",  # slower = red
+    )
+    m3.metric(
+        "Simple queries where Rung 5 wins",
+        f"{simple_wins} of {simple_n}",
+    )
+    m4.metric(
+        "Complex queries where Rung 4 fails",
+        f"{complex_fails} of {complex_n}",
+    )
+
+    lat5_min = overall["5"]["latency_ms"]["min"]
+    lat5_max = overall["5"]["latency_ms"]["max"]
+    st.caption(
+        f"Rung 5 latency ranged {lat5_min:,.0f}–{lat5_max:,.0f} ms across "
+        f"{overall['5']['n']} runs; the mean above reflects real observed "
+        "variance (including provider-side slow responses), not a filtered "
+        "best case."
+    )
+
     st.divider()
-    _cta_row()
-    st.stop()
 
-n_failed = _n_failed_runs(data)
-completeness_note = (
-    f" {n_failed} of {len(data['runs'])} raw runs hit a transient provider "
-    "error and are excluded from the affected cell's mean (visible as a "
-    "narrower sample, not papered over)."
-    if n_failed
-    else ""
-)
-st.caption(
-    f"Static benchmark — {len(data['runs'])} runs "
-    f"({data['aggregates']['by_tier']['simple']['n_queries']} queries per tier "
-    f"× {len(RUNG_LABELS)} rungs). Generated {_fmt_when(data['generated_at'])}. "
-    f"No live model calls on this page.{completeness_note}"
-)
+    # ===========================================================================
+    # 3. Two grouped bar charts side by side — cost by rung, latency by rung
+    # ===========================================================================
 
-overall = data["aggregates"]["overall"]
-by_tier = data["aggregates"]["by_tier"]
+    # Shape the per-tier means into a long dataframe: (Complexity, Rung, cost, latency).
+    chart_rows = []
+    for tier in data["tiers"]:
+        for lvl in ("4", "5"):
+            cell = by_tier[tier][lvl]
+            chart_rows.append(
+                {
+                    "Complexity": TIER_LABELS.get(tier, tier),
+                    "Rung": RUNG_LABELS[lvl],
+                    "Cost per query (USD)": cell["cost_usd"]["mean"] if cell["cost_usd"] else 0,
+                    "Latency per query (ms)": cell["latency_ms"]["mean"] if cell["latency_ms"] else 0,
+                }
+            )
+    chart_df = pd.DataFrame(chart_rows)
+    tier_order = [TIER_LABELS.get(t, t) for t in data["tiers"]]
 
-# ===========================================================================
-# 2. Metric strip — all multiples computed from the JSON at render time
-# ===========================================================================
+    left, right = st.columns(2)
+    with left:
+        st.markdown("**Cost per query by rung**")
+        fig_cost = px.bar(
+            chart_df,
+            x="Complexity",
+            y="Cost per query (USD)",
+            color="Rung",
+            barmode="group",
+            category_orders={"Complexity": tier_order},
+            color_discrete_map=_RUNG_COLORS,
+        )
+        fig_cost.update_layout(**_PLOTLY_LAYOUT)
+        st.plotly_chart(fig_cost, use_container_width=True)
+    with right:
+        st.markdown("**Latency per query by rung** _(log scale — see note above)_")
+        fig_lat = px.bar(
+            chart_df,
+            x="Complexity",
+            y="Latency per query (ms)",
+            color="Rung",
+            barmode="group",
+            category_orders={"Complexity": tier_order},
+            color_discrete_map=_RUNG_COLORS,
+            log_y=True,
+        )
+        fig_lat.update_layout(**_PLOTLY_LAYOUT)
+        st.plotly_chart(fig_lat, use_container_width=True)
 
-cost4 = overall["4"]["cost_usd"]["mean"]
-cost5 = overall["5"]["cost_usd"]["mean"]
-lat4 = overall["4"]["latency_ms"]["mean"]
-lat5 = overall["5"]["latency_ms"]["mean"]
+    st.divider()
 
-cost_mult = cost5 / cost4 if cost4 else float("nan")
-lat_mult = lat5 / lat4 if lat4 else float("nan")
+    # ===========================================================================
+    # 4. Verdict table — one row per query + plain-language recommendation
+    # ===========================================================================
 
-simple_wins = by_tier["simple"]["r5_wins_over_r4"]
-simple_n = by_tier["simple"]["n_queries"]
-complex_fails = by_tier["complex"]["r4_fail_count"]
-complex_n = by_tier["complex"]["n_queries"]
-
-m1, m2, m3, m4 = st.columns(4)
-m1.metric(
-    "Rung 5 cost / query",
-    f"${cost5:.6f}",
-    delta=f"{cost_mult:.1f}× vs Rung 4",
-    delta_color="inverse",  # more expensive = red
-)
-m2.metric(
-    "Rung 5 latency / query",
-    f"{lat5:,.0f} ms",
-    delta=f"{lat_mult:.1f}× vs Rung 4",
-    delta_color="inverse",  # slower = red
-)
-m3.metric(
-    "Simple queries where Rung 5 wins",
-    f"{simple_wins} of {simple_n}",
-)
-m4.metric(
-    "Complex queries where Rung 4 fails",
-    f"{complex_fails} of {complex_n}",
-)
-
-lat5_min = overall["5"]["latency_ms"]["min"]
-lat5_max = overall["5"]["latency_ms"]["max"]
-st.caption(
-    f"Rung 5 latency ranged {lat5_min:,.0f}–{lat5_max:,.0f} ms across "
-    f"{overall['5']['n']} runs; the mean above reflects real observed "
-    "variance (including provider-side slow responses), not a filtered "
-    "best case."
-)
-
-st.divider()
-
-# ===========================================================================
-# 3. Two grouped bar charts side by side — cost by rung, latency by rung
-# ===========================================================================
-
-# Shape the per-tier means into a long dataframe: (Complexity, Rung, cost, latency).
-chart_rows = []
-for tier in data["tiers"]:
-    for lvl in ("4", "5"):
-        cell = by_tier[tier][lvl]
-        chart_rows.append(
+    st.subheader("Per-query verdict")
+    verdict_rows = []
+    for v in data["verdicts"]:
+        verdict_rows.append(
             {
-                "Complexity": TIER_LABELS.get(tier, tier),
-                "Rung": RUNG_LABELS[lvl],
-                "Cost per query (USD)": cell["cost_usd"]["mean"] if cell["cost_usd"] else 0,
-                "Latency per query (ms)": cell["latency_ms"]["mean"] if cell["latency_ms"] else 0,
+                "Query": v["query"],
+                "Tier": TIER_LABELS.get(v["tier"], v["tier"]),
+                "Rung 4": "✅" if v["rung4_correct"] else "❌",
+                "Rung 5": "✅" if v["rung5_correct"] else "❌",
+                "Recommendation": v["recommendation"],
             }
         )
-chart_df = pd.DataFrame(chart_rows)
-tier_order = [TIER_LABELS.get(t, t) for t in data["tiers"]]
-
-left, right = st.columns(2)
-with left:
-    st.markdown("**Cost per query by rung**")
-    fig_cost = px.bar(
-        chart_df,
-        x="Complexity",
-        y="Cost per query (USD)",
-        color="Rung",
-        barmode="group",
-        category_orders={"Complexity": tier_order},
-        color_discrete_map=_RUNG_COLORS,
+    st.dataframe(
+        pd.DataFrame(verdict_rows),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Query": st.column_config.TextColumn(width="medium"),
+            "Recommendation": st.column_config.TextColumn(width="large"),
+        },
     )
-    fig_cost.update_layout(**_PLOTLY_LAYOUT)
-    st.plotly_chart(fig_cost, use_container_width=True)
-with right:
-    st.markdown("**Latency per query by rung** _(log scale — see note above)_")
-    fig_lat = px.bar(
-        chart_df,
-        x="Complexity",
-        y="Latency per query (ms)",
-        color="Rung",
-        barmode="group",
-        category_orders={"Complexity": tier_order},
-        color_discrete_map=_RUNG_COLORS,
-        log_y=True,
+    st.caption(
+        "“Correct” is a per-query behavioral check (right tools called / escalated "
+        "when it should), stored in the benchmark JSON so it's auditable."
     )
-    fig_lat.update_layout(**_PLOTLY_LAYOUT)
-    st.plotly_chart(fig_lat, use_container_width=True)
 
-st.divider()
+    st.divider()
 
-# ===========================================================================
-# 4. Verdict table — one row per query + plain-language recommendation
-# ===========================================================================
+    # ===========================================================================
+    # 5. CTA row
+    # ===========================================================================
 
-st.subheader("Per-query verdict")
-verdict_rows = []
-for v in data["verdicts"]:
-    verdict_rows.append(
-        {
-            "Query": v["query"],
-            "Tier": TIER_LABELS.get(v["tier"], v["tier"]),
-            "Rung 4": "✅" if v["rung4_correct"] else "❌",
-            "Rung 5": "✅" if v["rung5_correct"] else "❌",
-            "Recommendation": v["recommendation"],
-        }
-    )
-st.dataframe(
-    pd.DataFrame(verdict_rows),
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "Query": st.column_config.TextColumn(width="medium"),
-        "Recommendation": st.column_config.TextColumn(width="large"),
-    },
+    _cta_row()
+
+
+# ---------------------------------------------------------------------------
+# Navigation — explicit titles so the sidebar and browser tab read
+# "Executive Dashboard" / "Interactive Explorer" instead of filenames.
+# ---------------------------------------------------------------------------
+
+pg = st.navigation(
+    [
+        st.Page(render_dashboard, title="Executive Dashboard", icon="📊", default=True),
+        st.Page(
+            "pages/2_🔬_Interactive_Explorer.py",
+            title="Interactive Explorer",
+            icon="🔬",
+        ),
+    ]
 )
-st.caption(
-    "“Correct” is a per-query behavioral check (right tools called / escalated "
-    "when it should), stored in the benchmark JSON so it's auditable."
-)
-
-st.divider()
-
-# ===========================================================================
-# 5. CTA row
-# ===========================================================================
-
-_cta_row()
+pg.run()
