@@ -9,7 +9,7 @@
     "placed_at": "2026-07-15T19:12:00",
     "promised_at": "2026-07-15T19:52:00",
     "status": "in_transit",
-    "delivery_area": "Koramangala"
+    "delivery_area": "SOMA"
   },
   {
     "order_id": "ORD-4471",
@@ -21,7 +21,7 @@
     "placed_at": "2026-07-15T18:30:00",
     "promised_at": "2026-07-15T19:10:00",
     "status": "in_transit",
-    "delivery_area": "Indiranagar"
+    "delivery_area": "Marina District"
   },
   {
     "order_id": "ORD-1200",
@@ -33,7 +33,7 @@
     "placed_at": "2026-07-15T17:00:00",
     "promised_at": "2026-07-15T17:40:00",
     "status": "delivered",
-    "delivery_area": "Jayanagar"
+    "delivery_area": "Mission District"
   },
   {
     "order_id": "ORD-1201",
@@ -45,7 +45,7 @@
     "placed_at": "2026-07-14T20:00:00",
     "promised_at": "2026-07-14T20:45:00",
     "status": "delivered",
-    "delivery_area": "HSR Layout"
+    "delivery_area": "Mission District"
   },
   {
     "order_id": "ORD-7788",
@@ -57,7 +57,7 @@
     "placed_at": "2026-07-15T19:30:00",
     "promised_at": "2026-07-15T20:10:00",
     "status": "in_transit",
-    "delivery_area": "BTM Layout"
+    "delivery_area": "Mission District"
   },
   {
     "order_id": "ORD-3003",
@@ -69,7 +69,7 @@
     "placed_at": "2026-07-15T18:00:00",
     "promised_at": "2026-07-15T18:40:00",
     "status": "delivered",
-    "delivery_area": "Whitefield"
+    "delivery_area": "SOMA"
   },
   {
     "order_id": "ORD-5500",
@@ -81,7 +81,7 @@
     "placed_at": "2026-07-15T19:00:00",
     "promised_at": "2026-07-15T19:40:00",
     "status": "preparing",
-    "delivery_area": "Koramangala"
+    "delivery_area": "SOMA"
   },
   {
     "order_id": "ORD-6100",
@@ -93,6 +93,6 @@
     "placed_at": "2026-07-15T18:45:00",
     "promised_at": "2026-07-15T19:25:00",
     "status": "out_for_delivery",
-    "delivery_area": "Indiranagar"
+    "delivery_area": "Marina District"
   }
 ]

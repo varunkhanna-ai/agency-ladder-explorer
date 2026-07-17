@@ -254,7 +254,7 @@ def test_step_budget_breach():
 
     # A query complex enough that the model won't finish in 2 steps.
     result = mod.run(
-        "ORD-9821 is 40 minutes late, it's pouring rain in Koramangala, "
+        "ORD-9821 is 40 minutes late, it's foggy in SOMA, "
         "and the restaurant hasn't updated. I want a full refund.",
         max_steps=2,
     )

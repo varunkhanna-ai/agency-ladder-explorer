@@ -122,12 +122,12 @@ Query: *"ORD-9821 is late, it's pouring rain, restaurant not answering"* — the
 🧠 THINK   — To understand the current status of the order and potential
              reasons for the delay, I am calling get_order_status.
 ⚙️  ACT     🟢 get_order_status({'order_id': 'ORD-9821'})
-👁️  OBSERVE — {'status': 'in_transit', 'delivery_area': 'Koramangala', ...}
+👁️  OBSERVE — {'status': 'in_transit', 'delivery_area': 'SOMA', ...}
 
 🧠 THINK   — I am calling get_weather to check the current weather
              conditions in the delivery area to see if it's causing delays.
-⚙️  ACT     🟢 get_weather({'delivery_area': 'Koramangala'})
-👁️  OBSERVE — {'condition': 'heavy_rain', 'severity': 'high'}
+⚙️  ACT     🟢 get_weather({'delivery_area': 'SOMA'})
+👁️  OBSERVE — {'condition': 'fog', 'temperature': '62°F'}
 
 ⚙️  ACT     🟢 get_driver_gps({'order_id': 'ORD-9821'})
 👁️  OBSERVE — {'status': 'stalled', 'eta_min': 45, 'distance_km': 2.1}
@@ -136,7 +136,7 @@ Query: *"ORD-9821 is late, it's pouring rain, restaurant not answering"* — the
 👁️  OBSERVE — {'status': 'delayed', 'current_prep_time_min': 40, ...}
 
 🧠 THINK   — I've checked on your order, and it looks like the driver is
-             currently stalled due to heavy rain in Koramangala, and the
+             currently stalled due to fog in SOMA, and the
              restaurant is also delayed...
 ⚙️  ACT     🟢 search_refund_policy({'query': 'delayed order refund'})
 👁️  OBSERVE — {'section': '2. Delivery Delay Compensation', ...}

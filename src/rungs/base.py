@@ -114,7 +114,7 @@ _TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
             "properties": {
                 "delivery_area": {
                     "type": "string",
-                    "description": "Delivery area name, e.g. 'Koramangala'.",
+                    "description": "Delivery area name, e.g. 'Mission District'.",
                 }
             },
             "required": ["delivery_area"],

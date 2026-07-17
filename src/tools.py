@@ -83,16 +83,22 @@ def search_refund_policy(query: str) -> dict[str, str]:
 
 
 _WEATHER_DATA: dict[str, dict[str, str]] = {
-    "koramangala": {"condition": "heavy_rain", "severity": "high"},
+    "missiondistrict": {"condition": "clear", "temperature": "65°F"},
+    "soma": {"condition": "fog", "temperature": "62°F"},
+    "marinadistrict": {"condition": "windy", "temperature": "60°F"},
 }
 
 
 def get_weather(delivery_area: str) -> dict[str, str]:
-    """Hardcoded weather data. Koramangala=heavy rain; all other areas=clear."""
+    """Hardcoded weather per San Francisco neighborhood.
+
+    Mission District = clear/65°F, SOMA = fog/62°F, Marina District = windy/60°F.
+    Unknown areas default to clear/70°F.
+    """
     area_key = delivery_area.strip().lower().replace(" ", "")
     if area_key in _WEATHER_DATA:
         return _WEATHER_DATA[area_key]
-    return {"condition": "clear", "severity": "none"}
+    return {"condition": "clear", "temperature": "70°F"}
 
 
 _DRIVER_GPS: dict[str, dict[str, Any]] = {
