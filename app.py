@@ -310,10 +310,10 @@ def render_dashboard() -> None:
 
 pg = st.navigation(
     [
-        st.Page(render_dashboard, title="Executive Dashboard", icon="📊", default=True),
+        st.Page(render_dashboard, title="Agent Ladder — Executive Dashboard", icon="📊", default=True),
         st.Page(
             "pages/2_🔬_Interactive_Explorer.py",
-            title="Interactive Explorer",
+            title="Food Delivery Customer Chat Agent",
             icon="🔬",
         ),
     ]

@@ -1,4 +1,4 @@
-"""Interactive Explorer — run Rungs 4 & 5 live against a query.
+"""Food Delivery Customer Chat Agent — run Rungs 4 & 5 live against a query.
 
 Second page of the multipage app (the Executive Dashboard is the landing
 page). This page DOES make live LLM calls; the dashboard never does.
@@ -123,7 +123,7 @@ GITHUB_URL = "https://github.com/varunkhanna-ai/agency-ladder-explorer"
 # 1. Header
 # ---------------------------------------------------------------------------
 
-st.title("🔬 Interactive Explorer")
+st.title("Food Delivery Customer Chat Agent")
 st.caption(
     "Run the same query through Rung 4 (fixed workflow) and Rung 5 (ReAct "
     "loop) live, and watch the cost/latency gap. "
@@ -131,7 +131,15 @@ st.caption(
 )
 
 st.markdown(
-    "This demo focuses on Rungs 4 and 5 of the agency ladder to illustrate "
+    "This is a real-world example of a Food Delivery Customer Chat Agent. "
+    "You're interacting with two different agent implementations (Rung 4: "
+    "deterministic workflow, Rung 5: agentic reasoning loop) handling "
+    "customer support queries for DeliverEase. Run a query to see how cost, "
+    "latency, and correctness differ between the two approaches."
+)
+
+st.markdown(
+    "This demo focuses on Rungs 4 and 5 of the Agent Ladder to illustrate "
     "the core tradeoff: deterministic workflow vs. agentic reasoning. "
     "(Rungs 1–3 were deliberately scoped out.)"
 )
@@ -179,7 +187,7 @@ st.subheader("2. Choose rungs to compare")
 st.caption(
     "Only Rungs 4 and 5 are built in this demo (Rungs 1-3 were scoped out — "
     "see the README). Comparing a deterministic workflow against an agentic "
-    "loop is where the thesis actually lives."
+    "loop is where the Agent Ladder thesis actually lives."
 )
 selected = st.multiselect(
     "Rungs",
