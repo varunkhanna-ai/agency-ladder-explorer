@@ -194,9 +194,6 @@ if results or errors:
             elif res.escalated:
                 st.info("This rung escalated to a human.")
 
-            st.markdown("**Final answer:**")
-            st.write(res.final_answer)
-
             st.markdown("**Trace:**")
             for step in res.trace:
                 if step.kind == "THINK":
