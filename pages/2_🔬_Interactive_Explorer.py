@@ -72,6 +72,48 @@ PRESET_QUERIES: dict[str, str] = {
 
 RISK_BADGE = {"GREEN": "🟢", "YELLOW": "🟡", "BLUE": "🔵"}
 
+# Rung 4's fixed workflow (src/rungs/rung4_workflow.py) is a decision tree
+# built for exactly one situation: a cold-food / quality refund complaint. It
+# always runs that same 5-step sequence regardless of what's actually being
+# asked, so on any OTHER kind of query it can "complete without error" (no
+# exception, a final answer produced) while still being the wrong response —
+# e.g. issuing a refund coupon for a query that was actually about weather-
+# related delay, or never recognizing a safety issue that must escalate.
+# This is a static, documented fact about the two on-path preset scenarios
+# (cold-food complaints) vs. the four off-path ones — not a per-run grader,
+# since we have no ground truth for arbitrary typed queries.
+_RUNG4_OFF_PATH_QUERIES: set[str] = {
+    PRESET_QUERIES["ORD-9821 — late + rain + restaurant silent (the centerpiece)"],
+    PRESET_QUERIES["ORD-4471 — looks fine but restaurant is backed up"],
+    PRESET_QUERIES["ORD-7788 — simple, on-time, no complications"],
+    PRESET_QUERIES["ORD-3003 — allergic reaction (must escalate)"],
+}
+
+
+def _ratio_phrase(
+    hi_val: float, lo_val: float, hi_label: str, lo_label: str,
+    higher_word: str, lower_word: str,
+) -> str:
+    """Direction-aware ratio phrasing — never says "took 0.5x longer".
+
+    Compares hi_val to lo_val and always describes whichever one is actually
+    larger, using the correct word for that direction, so the sentence stays
+    true regardless of which rung happened to be slower/costlier in this
+    particular live run (a real possibility given network variance).
+    """
+    if lo_val <= 0:
+        return f"{hi_label}'s value couldn't be compared to {lo_label} (no baseline)"
+    if hi_val >= lo_val:
+        return f"{hi_label} was {hi_val / lo_val:.1f}× {higher_word} than {lo_label}"
+    return f"{hi_label} was actually {lo_val / hi_val:.1f}× {lower_word} than {lo_label}"
+
+
+def _ratio_magnitude(ratio: float) -> float:
+    """How far a ratio deviates from 1, symmetric in either direction."""
+    if ratio in (0, float("inf")):
+        return float("inf")
+    return max(ratio, 1 / ratio)
+
 GITHUB_URL = "https://github.com/varunkhanna-ai/agency-ladder-explorer"
 
 # Page config + title/icon are set by app.py's st.navigation (which runs this
@@ -240,7 +282,7 @@ if results or errors:
             rows.append(
                 {
                     "Rung": f"Rung {level} — {info['name']}",
-                    "Answered?": "❌ Failed",
+                    "Completed?": "❌ Failed",
                     "Latency (ms)": None,
                     "Tokens": None,
                     "Cost (USD)": None,
@@ -250,17 +292,25 @@ if results or errors:
         elif level in results:
             res = results[level]
             if res.step_budget_breached:
-                answered = "⚠️ Budget breached"
+                completed = "⚠️ Budget breached"
             elif res.escalated:
-                answered = "🔵 Escalated"
+                completed = "🔵 Escalated"
             elif res.final_answer:
-                answered = "✅ Yes"
+                completed = "✅ Ran without error"
             else:
-                answered = "❌ No answer"
+                completed = "❌ No answer"
+            # Rung 4 always "completes" on off-path queries — that doesn't
+            # mean its answer was appropriate (see caption + takeaway below).
+            if (
+                level == 4
+                and completed == "✅ Ran without error"
+                and query in _RUNG4_OFF_PATH_QUERIES
+            ):
+                completed += " ⚠️ off-path for this query type"
             rows.append(
                 {
                     "Rung": f"Rung {level} — {info['name']}",
-                    "Answered?": answered,
+                    "Completed?": completed,
                     "Latency (ms)": res.latency_ms,
                     "Tokens": res.input_tokens + res.output_tokens,
                     "Cost (USD)": round(res.cost_usd, 6),
@@ -271,9 +321,15 @@ if results or errors:
     df = pd.DataFrame(rows).set_index("Rung")
     st.dataframe(df, use_container_width=True)
     st.caption(
-        "\"Answered?\" reflects whether the rung completed without error — "
-        "not an automated correctness grader. Escalation is a legitimate, "
-        "designed outcome, not a failure."
+        "\"Completed?\" reflects whether the rung ran without error — it is "
+        "NOT an automated correctness grader (renamed from \"Answered?\" to "
+        "avoid implying otherwise). Escalation is a legitimate, designed "
+        "outcome, not a failure. Rung 4 runs the same fixed cold-food-refund "
+        "decision tree regardless of what's actually asked, so it can "
+        "\"complete\" on an off-path query (weather delay, safety issue, a "
+        "plain status check) while still producing an inappropriate answer — "
+        "flagged above where detectable. For real correctness grading against "
+        "known-good outcomes, see the Executive Dashboard's verdict table."
     )
 
     # ---------------------------------------------------------------------
@@ -294,27 +350,71 @@ if results or errors:
     # ---------------------------------------------------------------------
     ok_levels = [lvl for lvl in results if lvl not in errors]
     if len(ok_levels) == 2:
-        lvl_lo, lvl_hi = sorted(ok_levels)
+        lvl_lo, lvl_hi = sorted(ok_levels)  # this app only has (4, 5)
         r_lo, r_hi = results[lvl_lo], results[lvl_hi]
 
-        def _answered_ok(r: RungResult) -> bool:
+        def _completed(r: RungResult) -> bool:
             return bool(r.final_answer) and not r.step_budget_breached
 
-        lo_ok, hi_ok = _answered_ok(r_lo), _answered_ok(r_hi)
+        lo_ok, hi_ok = _completed(r_lo), _completed(r_hi)
         lat_ratio = (r_hi.latency_ms / r_lo.latency_ms) if r_lo.latency_ms else float("inf")
         cost_ratio = (r_hi.cost_usd / r_lo.cost_usd) if r_lo.cost_usd else float("inf")
+        notable = (
+            _ratio_magnitude(lat_ratio) >= 1.5 or _ratio_magnitude(cost_ratio) >= 1.5
+        )
+        # Rung 4 always runs the same cold-food-refund decision tree — it can
+        # "complete" on a query it was never built to evaluate, and that
+        # completion doesn't mean the answer was actually correct.
+        rung4_off_path = lvl_lo == 4 and query in _RUNG4_OFF_PATH_QUERIES
 
-        if lo_ok and hi_ok:
-            if lat_ratio >= 1.5 or cost_ratio >= 1.5:
+        # Rung 4's off-path caveat applies whenever it "completed" on a query
+        # its fixed workflow wasn't built for — independent of whether Rung 5
+        # also completed. Checking this FIRST (before the plain completion
+        # comparison) matters: without it, a case like "Rung 4 completes (but
+        # wrongly) while Rung 5 escalates" would fall through to the generic
+        # "more agency didn't help" framing and implicitly vouch for Rung 4's
+        # answer as correct, which we have no basis to claim.
+        if lo_ok and rung4_off_path and hi_ok:
+            takeaway = (
+                f"Rung {lvl_lo} completed without error, but this isn't a "
+                "cold-food/quality refund complaint — its fixed workflow is "
+                "only built to evaluate that one situation, so completing "
+                "doesn't mean it answered correctly. Rung 5 actually "
+                "investigated the real situation. "
+                + _ratio_phrase(
+                    r_hi.cost_usd, r_lo.cost_usd, f"Rung {lvl_hi}", f"Rung {lvl_lo}",
+                    "more expensive", "cheaper",
+                )
+                + " — Rung 5 likely succeeded where Rung 4 failed, at a cost premium."
+            )
+        elif lo_ok and rung4_off_path and not hi_ok:
+            takeaway = (
+                f"Rung {lvl_lo} completed without error, but this isn't a "
+                "cold-food/quality refund complaint — its fixed workflow is "
+                "only built to evaluate that one situation, so completing "
+                "doesn't mean it answered correctly (check the trace above "
+                f"for what it actually did). Rung {lvl_hi} escalated or "
+                "exhausted its step budget instead of guessing. Neither "
+                "rung's outcome should be trusted at face value here."
+            )
+        elif lo_ok and hi_ok:
+            if notable:
                 takeaway = (
-                    f"Both Rung {lvl_lo} and Rung {lvl_hi} answered this query. "
-                    f"Rung {lvl_hi} took {lat_ratio:.1f}× longer and cost "
-                    f"{cost_ratio:.1f}× more. For this query, Rung {lvl_lo} "
-                    "is the right design choice."
+                    f"Both Rung {lvl_lo} and Rung {lvl_hi} completed this query. "
+                    + _ratio_phrase(
+                        r_hi.latency_ms, r_lo.latency_ms, f"Rung {lvl_hi}", f"Rung {lvl_lo}",
+                        "slower", "faster",
+                    )
+                    + ", and "
+                    + _ratio_phrase(
+                        r_hi.cost_usd, r_lo.cost_usd, f"Rung {lvl_hi}", f"Rung {lvl_lo}",
+                        "more expensive", "cheaper",
+                    )
+                    + f". For this query, Rung {lvl_lo} is the right design choice."
                 )
             else:
                 takeaway = (
-                    f"Both Rung {lvl_lo} and Rung {lvl_hi} answered this query "
+                    f"Both Rung {lvl_lo} and Rung {lvl_hi} completed this query "
                     "at similar cost and latency — the simpler rung's "
                     "reliability isn't being bought at a premium here."
                 )
@@ -327,7 +427,7 @@ if results or errors:
             )
         elif lo_ok and not hi_ok:
             takeaway = (
-                f"Rung {lvl_lo} answered directly; Rung {lvl_hi} escalated or "
+                f"Rung {lvl_lo} completed directly; Rung {lvl_hi} escalated or "
                 "exhausted its step budget on the same query. More agency "
                 "did not produce a better outcome here."
             )
